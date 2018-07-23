@@ -69,6 +69,7 @@ function checkConflict(time1, time2){
     //console.log(day1); for testing
     var day2= timeArray2[timeArray2.length-1].replace(/\s+/, '').split('');
     //console.log(day2); for testing
+    
     var dayConflict = false;
     for(var i=0; i<day2.length;i++){
         if(day1.includes(day2[i])){
@@ -79,29 +80,70 @@ function checkConflict(time1, time2){
         return false;
     }
     
-    //TODO: change the time into int and compare
-    //var startTime1= timeArray1[1].split
-}
+    function timeToDecimal(tString){
+        var arr = tString.split(':');
+        return parseInt(arr[0])*1 + parseInt(arr[1])/60;
+    }
     
+    var timeData1 = timeArray1[0].split('-');
+    var timeData2 = timeArray2[0].split('-');
+    
+    var timeStart1 = timeToDecimal(timeData1[0]);
+    var timeEnd1 = timeToDecimal(timeData1[1]);
+    
+    var timeStart2 = timeToDecimal(timeData2[0]);
+    var timeEnd2 = timeToDecimal(timeData2[1]);
+    
+    if(timeStart1 < 8){
+        timeStart1 += 12;
+        timeEnd1 += 12;
+    }
+    
+    else if(timeEnd1 < 8){
+        timeEnd1 +=12;
+    }
+    
+    if(timeStart2 < 8){
+        timeStart2 += 12;
+        timeEnd2 += 12;
+    }
+    
+    else if(timeStart2 < 8){
+        timeEnd2 +=12;
+    }
+    
+    if(timeStart1 === timeStart2 || timeEnd1 === timeEnd2){
+        return true;
+    }
+    else if(timeStart1<timeStart2){
+        if(timeEnd1 < timeStart2){return false;}
+        else{return true;}
+    }
+    else{
+        if(timeEnd2<timeStart1){return false;}
+        else{return true;}
+    }
+}
+
+//iterate through table, check conflict for each course
 function updateConflict(order){
-    //iterate through map, check conflict for each course
-    //if class has lab and class conflict is
+    
     var timeList = [];
-    //var testString = "";
     for(var i=0; i < order; i++){
         timeList[i] = $('td:nth-child(5)','#'+ i +'').text();
-        //testString += i + " " + timeList[i] + '\n';
     }
     console.log(timeList);
+    
     for(var j=0; j < order-1; j++){
         for(var k=j+1; k < order; k++){
-            /*if(checkConflict(timeList[j],timeList[k])){ //remember to set back to true, false is to test
+            if(checkConflict(timeList[j],timeList[k])){ 
                 $('#'+ j+ ', #' + k+ '').css('background-color', red);
-            }*/
+                
+            }
+            
             console.log(checkConflict(timeList[j],timeList[k])); //for testing, commented when done
         }
     }
-    //console.log(testString);
 }
 
 

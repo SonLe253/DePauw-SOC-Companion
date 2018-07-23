@@ -1,0 +1,210 @@
+chrome.runtime.sendMessage({action: "show"});
+
+/* TODO: 
+    - Finish time conflict
+    - Make SOC a button so user can jump to that course in the list
+    - Make course desc a hyperlink so user can access course details
+    - Sync the color between course in toptable w/ coursetable
+*/
+
+//Name Description Params Return
+//GG JS Style Guide
+
+var green = '#c8f08c';
+var yellow = '#f0e68c';
+var red = '#f0b48c';
+
+$('table:nth-child(5) tbody').attr('id','courseTable');//add main table tag //this should be moved to main funct after document.ready tho
+
+var courseList = new Map(); //array of picked course, let it be global so all function will have access to it, or put it to main function
+
+function Course(pSOC, pCrse, pDesc, pCred, pTime, pArea, pCmp, pPf, pCond, pInst, pRoom){ //later get individual Inst Room
+    this.SOC = pSOC;
+    this.crse = pCrse;
+    this.desc = pDesc;
+    this.cred = pCred;
+    this.time = pTime;
+    this.area = pArea;
+    this.comp = pCmp;
+    this.inst = pInst;
+    this.room = pRoom;
+    this.pf = pPf;
+    this.cond = pCond;
+    this.state = green;
+    this.lab = false;
+    // find way to split string of crse/desc and inst/room
+    // should i do H/L also?
+} //pickedCourse constructor, obj name will be the soc of that course (then will we need the SOC param anymore?)
+
+function injectDOM(){
+    
+    //the following lines are for checkboxes
+    $('#courseTable tr:nth-child(2)').prepend("<td></td>"); 
+    $('#courseTable tr[valign="top"]').each(function(index){
+        $(this).attr('id', $('td:nth-child(1)',this).text());
+        $(this).prepend("<td></td>");
+        $('td:first-child', this).prepend('<input type="checkbox">');
+    });
+    
+    //the following lines are for adding add-in table
+    $('body').prepend('<table id="topTable" style="border-collapse:collapse;border-spacing:0"></table>');
+    
+    $('#topTable').html('<thead><tr><th id="creditCount" colspan="10">Credit selected: 0</th></tr>//<tr style="background-color:#fcff2f;text-align:center"><td>SOC</td><td>Course</td><td>Description</td><td>Credit</td><td>Time</td><td>Area</td><td>Comp</td><td>Instructor</td><td>Room</td><td>Grade</td></tr><tbody id="courseInfo"></tbody>');
+    
+    $('#topTable td, #topTable th').css({'font-family':'Arial, sans-serif','font-size':'12px','font-weight':'normal','padding':'10px 5px','border-style':'solid','border-width':'1px','overflow':'hidden','word-break':'normal','border-color':'black','text-align':'center'});
+    
+    $('.td').css({'font-family':'Arial, sans-serif','font-size':'12px','font-weight':'normal','padding':'10px 5px','border-style':'solid','border-width':'1px','overflow':'hidden','word-break':'normal','border-color':'black','text-align':'center'});
+}
+
+function checkConflict(time1, time2){
+    if(time1.match('ARR') || time2.match('ARR')){
+        console.log('ARR check.');
+        return false;
+    } 
+    
+    var timeArray1 = time1.split(' ');
+    var timeArray2 = time2.split(' ');
+    
+    var day1= timeArray1[timeArray1.length-1].replace(/\s+/, ''); //replace use regex to remove whitespace
+    //console.log(day1); for testing
+    var day2= timeArray2[timeArray2.length-1].replace(/\s+/, '').split('');
+    //console.log(day2); for testing
+    var dayConflict = false;
+    for(var i=0; i<day2.length;i++){
+        if(day1.includes(day2[i])){
+            dayConflict = true;
+        }
+    }
+    if(!dayConflict){
+        return false;
+    }
+    
+    //TODO: change the time into int and compare
+    //var startTime1= timeArray1[1].split
+}
+    
+function updateConflict(order){
+    //iterate through map, check conflict for each course
+    //if class has lab and class conflict is
+    var timeList = [];
+    //var testString = "";
+    for(var i=0; i < order; i++){
+        timeList[i] = $('td:nth-child(5)','#'+ i +'').text();
+        //testString += i + " " + timeList[i] + '\n';
+    }
+    console.log(timeList);
+    for(var j=0; j < order-1; j++){
+        for(var k=j+1; k < order; k++){
+            /*if(checkConflict(timeList[j],timeList[k])){ //remember to set back to true, false is to test
+                $('#'+ j+ ', #' + k+ '').css('background-color', red);
+            }*/
+            console.log(checkConflict(timeList[j],timeList[k])); //for testing, commented when done
+        }
+    }
+    //console.log(testString);
+}
+
+
+function updateTable(){
+    var totalCredit = 0.0;
+    $('#courseInfo').empty(); //reset table
+    var order = 0;
+
+    
+    for (const [key, value] of courseList){
+        
+        $('#courseInfo').append('<tr id="'+ order.toString() + '" style="background-color:'+ value.state + '"><td>' + value.SOC + 
+                                '</td><td>'+ value.crse + '</td><td>' + value.desc + '</td><td>' + value.cred + '</td><td>' + value.time + 
+                                '</td><td>' + value.area + '</td><td>' + value.comp + '</td><td>' + value.inst + '</td><td>' + value.room + '</td><td></td></tr>'); 
+        order++;
+        
+        if(value.lab){
+            var lab = $("#"+ key +"").next();
+            value.labTime = lab.children(':nth-child(5)').text();
+            
+            $('#courseInfo').append('<tr id="'+ order.toString() + '" class="lab" style="background-color:'+ value.state + '"><td>' +
+                                    lab.children(':nth-child(2)').text() +'</td><td></td><td>'+ lab.children(':nth-child(3)').text() +'</td><td></td><td>' +
+                                    value.labTime + '</td><td></td><td></td><td></td><td>' + lab.children(':nth-child(10)').text() + '</td><td></td></tr>');
+            
+            order++;
+        } //for course with lab, add the lab info in also
+        
+        
+        totalCredit += parseFloat(value.cred); 
+        
+    } //iterate through map
+
+    updateConflict(order); //order still available
+
+    $('#creditCount').html('Credit selected: ' + totalCredit +''); //update the total credit
+    if((totalCredit < 3.0 && totalCredit>0)|| totalCredit > 4.5){
+        $('#creditCount').css("background-color", red); //not ok
+    }
+    else if(totalCredit === 0){
+        $('#creditCount').css("background-color", '#FFFFFF'); //reset
+    }
+    else{
+        $('#creditCount').css("background-color", green); //ok
+    }   
+} 
+//why don't line 38 applied to the newly created tr? any quicker way instead of add class to each td?
+
+function addCourse(tr){
+    var courseData = [];
+    
+    $(tr).children('td').each(function(){
+        var data = $(this).text();
+        courseData.push(data);
+    });
+    
+    var instRoom = courseData[11].split(/([A-Z][A-Z].*)/);
+    //alert('inst: '+instRoom[0] + ', room: ' + instRoom[1]);
+    
+    var course = new Course(courseData[1],courseData[2],courseData[3],courseData[4],courseData[5],
+                            courseData[6],courseData[7],courseData[9],courseData[10],instRoom[0],instRoom[1]);
+    var labRegex = /(L[A-Z])$/;
+    var next = $(tr).next();
+    if(labRegex.test($('td:nth-child(2)', next).text())){
+        course.lab = true;
+    }
+            
+    courseList.set($(tr).attr('id'), course);    
+}
+
+function checkCB(){
+    $("input:checkbox").change(function(){
+        if(this.checked){
+            var tr = $(this).closest('tr'); //but this won't use the assigned id though
+            addCourse(tr);
+            updateTable();
+            //updateConflict();
+        }
+        else{
+            var id = $(this).closest('tr').attr('id'); 
+            courseList.delete(id);
+            updateTable();
+            //updateConflict();
+        }
+    });
+    
+}
+
+injectDOM();
+checkCB();
+
+/* how to implement addCourse(SOC)? Why not just use array.add?
+- Create a new Course object (and fill all the params):
+    var (get the SOC using the id of tr that contain the checkbox) = new Course(...); //same w/ removeCourse
+- add course to table (table will have an update method called updateTable())*/
+
+/* removeCourse, remove that obj from the array. Why not just use array.remove?
+    
+
+/*how to find lab for courses that have lab?
+    - if Next <tr td:nth-child(2)> matches /LA$/, add that <tr> into table
+    - if the 4th <tr> have an id, then next <tr> will be lab, add it to table
+    - add id for lab (necessary? consider running time)
+*/
+
+//should I make lab obj or just do it as-is since we don't have to do anything w/ lab but get the raw data
+

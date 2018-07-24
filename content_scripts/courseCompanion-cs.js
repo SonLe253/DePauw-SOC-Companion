@@ -146,15 +146,18 @@ function updateConflict(order){
 
 
 function updateTable(){
-    var totalCredit = 0.0;
+    //var totalCredit = 0.0;
     $('#courseInfo').empty(); //reset table
     var order = 0;
-
     
     for (const [key, value] of courseList){
-        $('#courseInfo').append('<tr id="'+ order.toString() + '" style="background-color:'+ value.state + '"><td>' + value.SOC + 
-                                '</td><td>'+ value.crse + '</td><td>' + value.desc + '</td><td>' + value.cred + '</td><td>' + value.time + 
+        $('#courseInfo').append('<tr id="'+ order.toString() + '" style="background-color:'+ value.state + '"><td><button>' + value.SOC + 
+                                '</button></td><td>'+ value.crse + '</td><td>' + value.desc + '</td><td>' + value.cred + '</td><td>' + value.time + 
                                 '</td><td>' + value.area + '</td><td>' + value.comp + '</td><td>' + value.inst + '</td><td>' + value.room + '</td><td></td></tr>');
+        
+        $('#'+ order.toString() +' button').click(function(){
+            $("#"+ key +"")[0].scrollIntoView();
+        })
         $("#"+ key +"").css('background-color', value.state);
         
         order++;
@@ -172,13 +175,34 @@ function updateTable(){
             order++;
         } //for course with lab, add the lab info in also
         
-        totalCredit += parseFloat(value.cred); 
+        //totalCredit += parseFloat(value.cred); 
     } //iterate through map
     
     $('#courseInfo td').css({'font-family':'Arial, sans-serif','font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px','overflow':'hidden','border-color':'black'}); //any faster way?
     
     updateConflict(order); //order still available
 
+    /*$('#creditCount').html('Credit selected: ' + totalCredit +''); //update the total credit
+    if((totalCredit < 3.0 && totalCredit>0)|| totalCredit > 4.5){
+        $('#creditCount').css("background-color", red); //not ok
+    }
+    else if(totalCredit === 0){
+        $('#creditCount').css("background-color", '#FFFFFF'); //reset
+    }
+    else{
+        $('#creditCount').css("background-color", green); //ok
+    }  */
+} 
+
+//hard-reset version
+function updateCredit(){
+    var totalCredit = 0.0;
+    $('#courseInfo tr').each(function(){
+        if($(this).attr('class') != "lab"){
+        totalCredit += parseFloat($('td:nth-child(4)',this).text());
+        }
+    })
+    
     $('#creditCount').html('Credit selected: ' + totalCredit +''); //update the total credit
     if((totalCredit < 3.0 && totalCredit>0)|| totalCredit > 4.5){
         $('#creditCount').css("background-color", red); //not ok
@@ -189,7 +213,7 @@ function updateTable(){
     else{
         $('#creditCount').css("background-color", green); //ok
     }   
-} 
+}
 
 function addCourse(tr){
     var courseData = [];
@@ -219,6 +243,7 @@ function checkCB(){
             //but this won't use the assigned id though
             addCourse(tr);
             updateTable();
+            updateCredit();
         }
         else{
             //uncolor checked box tr
@@ -229,12 +254,14 @@ function checkCB(){
             }
             courseList.delete(tr.attr('id'));
             updateTable();
+            updateCredit();
         }
     });
 }
 
 injectDOM();
 checkCB();
+
 
 /* how to implement addCourse(SOC)? Why not just use array.add?
 - Create a new Course object (and fill all the params):

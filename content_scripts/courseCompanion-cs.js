@@ -1,10 +1,11 @@
 chrome.runtime.sendMessage({action: "show"});
 
 /* TODO: 
-    - Finish time conflict
     - Make SOC a button so user can jump to that course in the list
     - Make course desc a hyperlink so user can access course details
-    - Sync the color between course in toptable w/ coursetable
+    - Sync the color between course in toptable w/ coursetable (Done, but still need to fix border color, and in case color change to red)
+    - If course offer P/F, tell user in textarea
+    - If course is ARR, waitlisted or filled, change state to yellow (where to do this? add course or update table)
 */
 
 //Name Description Params Return
@@ -34,11 +35,10 @@ function Course(pSOC, pCrse, pDesc, pCred, pTime, pArea, pCmp, pPf, pCond, pInst
     this.lab = false;
     // find way to split string of crse/desc and inst/room
     // should i do H/L also?
-} //pickedCourse constructor, obj name will be the soc of that course (then will we need the SOC param anymore?)
+} //pickedCourse constructor
 
 function injectDOM(){
-    
-    //the following lines are for checkboxes
+    //the following lines are for injecting checkboxes
     $('#courseTable tr:nth-child(2)').prepend("<td></td>"); 
     $('#courseTable tr[valign="top"]').each(function(index){
         $(this).attr('id', $('td:nth-child(1)',this).text());
@@ -51,9 +51,7 @@ function injectDOM(){
     
     $('#topTable').html('<thead><tr><th id="creditCount" colspan="10">Credit selected: 0</th></tr>//<tr style="background-color:#fcff2f;text-align:center"><td>SOC</td><td>Course</td><td>Description</td><td>Credit</td><td>Time</td><td>Area</td><td>Comp</td><td>Instructor</td><td>Room</td><td>Grade</td></tr><tbody id="courseInfo"></tbody>');
     
-    $('#topTable td, #topTable th').css({'font-family':'Arial, sans-serif','font-size':'12px','font-weight':'normal','padding':'10px 5px','border-style':'solid','border-width':'1px','overflow':'hidden','word-break':'normal','border-color':'black','text-align':'center'});
-    
-    $('.td').css({'font-family':'Arial, sans-serif','font-size':'12px','font-weight':'normal','padding':'10px 5px','border-style':'solid','border-width':'1px','overflow':'hidden','word-break':'normal','border-color':'black','text-align':'center'});
+    $('#topTable td, #topTable th').css({'font-family':'Arial, sans-serif','font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px','border-color':'black','text-align':'center'}); //deleted property: 'word-break':'normal','overflow':'hidden'
 }
 
 function checkConflict(time1, time2){
@@ -138,7 +136,7 @@ function updateConflict(order){
         for(var k=j+1; k < order; k++){
             if(checkConflict(timeList[j],timeList[k])){ 
                 $('#'+ j+ ', #' + k+ '').css('background-color', red);
-                
+                //update the state of that course, for now I don't think it is necessary
             }
             
             console.log(checkConflict(timeList[j],timeList[k])); //for testing, commented when done
@@ -154,28 +152,31 @@ function updateTable(){
 
     
     for (const [key, value] of courseList){
-        
         $('#courseInfo').append('<tr id="'+ order.toString() + '" style="background-color:'+ value.state + '"><td>' + value.SOC + 
                                 '</td><td>'+ value.crse + '</td><td>' + value.desc + '</td><td>' + value.cred + '</td><td>' + value.time + 
-                                '</td><td>' + value.area + '</td><td>' + value.comp + '</td><td>' + value.inst + '</td><td>' + value.room + '</td><td></td></tr>'); 
+                                '</td><td>' + value.area + '</td><td>' + value.comp + '</td><td>' + value.inst + '</td><td>' + value.room + '</td><td></td></tr>');
+        $("#"+ key +"").css('background-color', value.state);
+        
         order++;
         
         if(value.lab){
             var lab = $("#"+ key +"").next();
-            value.labTime = lab.children(':nth-child(5)').text();
+            //value.labTime = lab.children(':nth-child(5)').text(); left here just in case if need lab time
             
             $('#courseInfo').append('<tr id="'+ order.toString() + '" class="lab" style="background-color:'+ value.state + '"><td>' +
                                     lab.children(':nth-child(2)').text() +'</td><td></td><td>'+ lab.children(':nth-child(3)').text() +'</td><td></td><td>' +
-                                    value.labTime + '</td><td></td><td></td><td></td><td>' + lab.children(':nth-child(10)').text() + '</td><td></td></tr>');
-            
+                                    lab.children(':nth-child(5)').text() + '</td><td></td><td></td><td></td><td>' + 
+                                    lab.children(':nth-child(10)').text() + '</td><td></td></tr>');
+            lab.css({'background-color': value.state, 'border-color': value.state});
+
             order++;
         } //for course with lab, add the lab info in also
         
-        
         totalCredit += parseFloat(value.cred); 
-        
     } //iterate through map
-
+    
+    $('#courseInfo td').css({'font-family':'Arial, sans-serif','font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px','overflow':'hidden','border-color':'black'}); //any faster way?
+    
     updateConflict(order); //order still available
 
     $('#creditCount').html('Credit selected: ' + totalCredit +''); //update the total credit
@@ -189,7 +190,6 @@ function updateTable(){
         $('#creditCount').css("background-color", green); //ok
     }   
 } 
-//why don't line 38 applied to the newly created tr? any quicker way instead of add class to each td?
 
 function addCourse(tr){
     var courseData = [];
@@ -200,7 +200,6 @@ function addCourse(tr){
     });
     
     var instRoom = courseData[11].split(/([A-Z][A-Z].*)/);
-    //alert('inst: '+instRoom[0] + ', room: ' + instRoom[1]);
     
     var course = new Course(courseData[1],courseData[2],courseData[3],courseData[4],courseData[5],
                             courseData[6],courseData[7],courseData[9],courseData[10],instRoom[0],instRoom[1]);
@@ -215,20 +214,23 @@ function addCourse(tr){
 
 function checkCB(){
     $("input:checkbox").change(function(){
+        var tr = $(this).closest('tr');
         if(this.checked){
-            var tr = $(this).closest('tr'); //but this won't use the assigned id though
+            //but this won't use the assigned id though
             addCourse(tr);
             updateTable();
-            //updateConflict();
         }
         else{
-            var id = $(this).closest('tr').attr('id'); 
-            courseList.delete(id);
+            //uncolor checked box tr
+            $(tr).css('background-color', 'white');
+            //if there is a lab, then uncolor it too
+            if($(tr).next().children().text() != ''){
+                $(tr).next().css('background-color', 'white');
+            }
+            courseList.delete(tr.attr('id'));
             updateTable();
-            //updateConflict();
         }
     });
-    
 }
 
 injectDOM();

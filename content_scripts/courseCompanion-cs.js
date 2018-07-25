@@ -1,11 +1,15 @@
 chrome.runtime.sendMessage({action: "show"});
 
 /* TODO (ARRAY VERSION): 
+    - Consider add id for each tr so can have easy access, like $('#1 #cred') to get credit of first picked class, so will easy to calculate GPA later on.
     - Revise code logic
-    - Revise updateConflict logic, and fix problem where 2 course conflict, remove 1 but the other still marked red
     - Sync the color between course in toptable w/ coursetable (Done, but still need to fix border color, and in case color change to red)
     - If course offer P/F, tell user in textarea
     - If course is ARR, waitlisted or filled, change state to yellow (where to do this? add course or update table)
+*/
+
+/* DONE TODO:
+- Revise updateConflict logic, and fix problem where 2 course conflict, remove 1 but the other still marked red
 */
 
 //Name Description Params Return
@@ -126,6 +130,8 @@ function updateConflict(){
     var order = addOrder.length;
     var timeList = [];
     for(var i=0; i < order; i++){
+        //reset color
+        $('#'+ (i+1) +'').css('background-color', green);
         timeList[i] = $('td:nth-child(5)','#'+ (i+1) +'').text();
     }
     console.log(timeList);
@@ -193,9 +199,12 @@ function addCourse(tr){
             
     addOrder.push(course.SOC);
     
+    var gradeList = '<select id="grade"><option></option><option value="4.0">A</option><option value="3.67">B</option><option value="3.33">B+</option><option value="3.0">B</option><option value="2.67">B-</option><option value="2.33">C+</option><option value="2.0">C</option><option value="1.67">C-</option><option value="1.33">D+</option><option value="1.0">D</option><option value="0.67">D-</option><option value="0.0">F</option>';
+
     $('#courseInfo').append('<tr id="'+ addOrder.length + '" style="background-color:'+ course.state + '"><td><button>' + course.SOC + 
                                 '</button></td><td>'+ course.crse + '</td><td>' + course.desc + '</td><td>' + course.cred + '</td><td>' + course.time + 
-                                '</td><td>' + course.area + '</td><td>' + course.comp + '</td><td>' + course.inst + '</td><td>' + course.room + '</td><td></td></tr>');
+                                '</td><td>' + course.area + '</td><td>' + course.comp + '</td><td>' + course.inst + '</td><td>' + course.room + '</td><td>' + gradeList +
+                                '</td></tr>');
         
         $('#'+ addOrder.length +' button').click(function(){
             $(tr)[0].scrollIntoView();

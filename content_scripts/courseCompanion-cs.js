@@ -1,8 +1,8 @@
 chrome.runtime.sendMessage({action: "show"});
 
-/* TODO: 
-    - Make SOC a button so user can jump to that course in the list
-    - Make course desc a hyperlink so user can access course details
+/* TODO (ARRAY VERSION): 
+    - Revise code logic
+    - Revise updateConflict logic, and fix problem where 2 course conflict, remove 1 but the other still marked red
     - Sync the color between course in toptable w/ coursetable (Done, but still need to fix border color, and in case color change to red)
     - If course offer P/F, tell user in textarea
     - If course is ARR, waitlisted or filled, change state to yellow (where to do this? add course or update table)
@@ -17,8 +17,7 @@ var red = '#f0b48c';
 
 $('table:nth-child(5) tbody').attr('id','courseTable');//add main table tag //this should be moved to main funct after document.ready tho
 
-var courseList = new Map(); //array of picked course, let it be global so all function will have access to it, or put it to main function
-
+//Course constructor
 function Course(pSOC, pCrse, pDesc, pCred, pTime, pArea, pCmp, pPf, pCond, pInst, pRoom){ //later get individual Inst Room
     this.SOC = pSOC;
     this.crse = pCrse;
@@ -33,9 +32,8 @@ function Course(pSOC, pCrse, pDesc, pCred, pTime, pArea, pCmp, pPf, pCond, pInst
     this.cond = pCond;
     this.state = green;
     this.lab = false;
-    // find way to split string of crse/desc and inst/room
     // should i do H/L also?
-} //pickedCourse constructor
+} 
 
 function injectDOM(){
     //the following lines are for injecting checkboxes
@@ -124,75 +122,32 @@ function checkConflict(time1, time2){
 }
 
 //iterate through table, check conflict for each course
-function updateConflict(order){
-    
+function updateConflict(){
+    var order = addOrder.length;
     var timeList = [];
     for(var i=0; i < order; i++){
-        timeList[i] = $('td:nth-child(5)','#'+ i +'').text();
+        timeList[i] = $('td:nth-child(5)','#'+ (i+1) +'').text();
     }
     console.log(timeList);
     
     for(var j=0; j < order-1; j++){
         for(var k=j+1; k < order; k++){
             if(checkConflict(timeList[j],timeList[k])){ 
-                $('#'+ j+ ', #' + k+ '').css('background-color', red);
+                $('#'+ (j+1)+ ', #' + (k+1)+ '').css('background-color', red);
                 //update the state of that course, for now I don't think it is necessary
             }
-            
+            /*else{
+                if($('#'+ (j+1)+ '').css('background-color') === red){
+                    $('#'+ (j+1)+ '').css('background-color', green);
+                }
+                else if($('#'+ (k+1)+ '').css('background-color') === red){
+                    $('#'+ (k+1)+ '').css('background-color', green);
+                }
+            }*/
             console.log(checkConflict(timeList[j],timeList[k])); //for testing, commented when done
         }
     }
-}
-
-
-function updateTable(){
-    //var totalCredit = 0.0;
-    $('#courseInfo').empty(); //reset table
-    var order = 0;
-    
-    for (const [key, value] of courseList){
-        $('#courseInfo').append('<tr id="'+ order.toString() + '" style="background-color:'+ value.state + '"><td><button>' + value.SOC + 
-                                '</button></td><td>'+ value.crse + '</td><td>' + value.desc + '</td><td>' + value.cred + '</td><td>' + value.time + 
-                                '</td><td>' + value.area + '</td><td>' + value.comp + '</td><td>' + value.inst + '</td><td>' + value.room + '</td><td></td></tr>');
-        
-        $('#'+ order.toString() +' button').click(function(){
-            $("#"+ key +"")[0].scrollIntoView();
-        })
-        $("#"+ key +"").css('background-color', value.state);
-        
-        order++;
-        
-        if(value.lab){
-            var lab = $("#"+ key +"").next();
-            //value.labTime = lab.children(':nth-child(5)').text(); left here just in case if need lab time
-            
-            $('#courseInfo').append('<tr id="'+ order.toString() + '" class="lab" style="background-color:'+ value.state + '"><td>' +
-                                    lab.children(':nth-child(2)').text() +'</td><td></td><td>'+ lab.children(':nth-child(3)').text() +'</td><td></td><td>' +
-                                    lab.children(':nth-child(5)').text() + '</td><td></td><td></td><td></td><td>' + 
-                                    lab.children(':nth-child(10)').text() + '</td><td></td></tr>');
-            lab.css({'background-color': value.state, 'border-color': value.state});
-
-            order++;
-        } //for course with lab, add the lab info in also
-        
-        //totalCredit += parseFloat(value.cred); 
-    } //iterate through map
-    
-    $('#courseInfo td').css({'font-family':'Arial, sans-serif','font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px','overflow':'hidden','border-color':'black'}); //any faster way?
-    
-    updateConflict(order); //order still available
-
-    /*$('#creditCount').html('Credit selected: ' + totalCredit +''); //update the total credit
-    if((totalCredit < 3.0 && totalCredit>0)|| totalCredit > 4.5){
-        $('#creditCount').css("background-color", red); //not ok
-    }
-    else if(totalCredit === 0){
-        $('#creditCount').css("background-color", '#FFFFFF'); //reset
-    }
-    else{
-        $('#creditCount').css("background-color", green); //ok
-    }  */
-} 
+} //have it done, but logic-wise? Also have a problem with coloring, pick 2 conflict and remove one, still have one red
 
 //hard-reset version
 function updateCredit(){
@@ -215,6 +170,8 @@ function updateCredit(){
     }   
 }
 
+var addOrder = [];
+
 function addCourse(tr){
     var courseData = [];
     
@@ -231,45 +188,86 @@ function addCourse(tr){
     var next = $(tr).next();
     if(labRegex.test($('td:nth-child(2)', next).text())){
         course.lab = true;
+        console.log("Class w/ lab");
     }
             
-    courseList.set($(tr).attr('id'), course);    
+    addOrder.push(course.SOC);
+    
+    $('#courseInfo').append('<tr id="'+ addOrder.length + '" style="background-color:'+ course.state + '"><td><button>' + course.SOC + 
+                                '</button></td><td>'+ course.crse + '</td><td>' + course.desc + '</td><td>' + course.cred + '</td><td>' + course.time + 
+                                '</td><td>' + course.area + '</td><td>' + course.comp + '</td><td>' + course.inst + '</td><td>' + course.room + '</td><td></td></tr>');
+        
+        $('#'+ addOrder.length +' button').click(function(){
+            $(tr)[0].scrollIntoView();
+        })
+        $(tr).css('background-color', course.state);
+        
+        
+        if(course.lab){
+            addOrder.push(course.SOC+' lab');
+            console.log("Add lab");
+            //value.labTime = next.children(':nth-child(5)').text(); left here just in case if need lab time
+            
+            $('#courseInfo').append('<tr id="'+ addOrder.length + '" class="lab" style="background-color:'+ course.state + '"><td>' +
+                                    next.children(':nth-child(2)').text() +'</td><td></td><td>'+ next.children(':nth-child(3)').text() +'</td><td></td><td>' +
+                                    next.children(':nth-child(5)').text() + '</td><td></td><td></td><td></td><td>' + 
+                                    next.children(':nth-child(10)').text() + '</td><td></td></tr>');
+            next.css({'background-color': course.state, 'border-color': course.state});
+        }
+     $('#courseInfo td').css({'font-family':'Arial, sans-serif','font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px','overflow':'hidden','border-color':'black'});
+}
+
+function removeCourse(tr){
+    var id = $(tr).attr('id');
+    var index = addOrder.indexOf(id);
+    //console.log(addOrder.indexOf(id));
+    
+    //lab situation
+    if($(tr).next().children().text() != ''){
+        $('#'+ (addOrder.indexOf(id) +1).toString() +'').remove();
+        $('#'+ (addOrder.indexOf(id) +2).toString() +'').remove();
+        addOrder.splice(index,2);
+        console.log(addOrder);
+        $(tr).next().css('background-color', 'white');
+    }
+    else{
+        $('#'+ (addOrder.indexOf(id) +1).toString() +'').remove();
+        addOrder.splice(index,1);
+        console.log(addOrder);
+    }
+    //uncolor checked box tr
+    $(tr).css('background-color', 'white');
+    //if there is a lab, then uncolor it too
+    
+    
+    var reOrd = 1;
+    $('#courseInfo tr').each(function(){
+        $(this).attr('id', reOrd.toString());
+        reOrd++;
+    })
 }
 
 function checkCB(){
     $("input:checkbox").change(function(){
         var tr = $(this).closest('tr');
         if(this.checked){
-            //but this won't use the assigned id though
             addCourse(tr);
-            updateTable();
+            //console.log(addOrder);
+            updateConflict();
             updateCredit();
         }
         else{
-            //uncolor checked box tr
-            $(tr).css('background-color', 'white');
-            //if there is a lab, then uncolor it too
-            if($(tr).next().children().text() != ''){
-                $(tr).next().css('background-color', 'white');
-            }
-            courseList.delete(tr.attr('id'));
-            updateTable();
+            removeCourse(tr);
+            updateConflict();
             updateCredit();
         }
     });
 }
 
-injectDOM();
-checkCB();
-
-
-/* how to implement addCourse(SOC)? Why not just use array.add?
-- Create a new Course object (and fill all the params):
-    var (get the SOC using the id of tr that contain the checkbox) = new Course(...); //same w/ removeCourse
-- add course to table (table will have an update method called updateTable())*/
-
-/* removeCourse, remove that obj from the array. Why not just use array.remove?
-    
+$(document).ready(function(){
+    injectDOM();
+    checkCB();
+})
 
 /*how to find lab for courses that have lab?
     - if Next <tr td:nth-child(2)> matches /LA$/, add that <tr> into table
@@ -277,5 +275,4 @@ checkCB();
     - add id for lab (necessary? consider running time)
 */
 
-//should I make lab obj or just do it as-is since we don't have to do anything w/ lab but get the raw data
 

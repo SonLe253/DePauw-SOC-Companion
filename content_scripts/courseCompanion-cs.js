@@ -1,6 +1,7 @@
 chrome.runtime.sendMessage({action: "show"});
 
 /* TODO (ARRAY VERSION): 
+    - Consider using json serialization to store needed data
     - Consider add id for each tr so can have easy access, like $('#1 #cred') to get credit of first picked class, so will easy to calculate GPA later on.
     - Revise code logic
     - Sync the color between course in toptable w/ coursetable (Done, but still need to fix border color, and in case color change to red)
@@ -131,7 +132,7 @@ function updateConflict(){
     var timeList = [];
     for(var i=0; i < order; i++){
         //reset color
-        $('#'+ (i+1) +'').css('background-color', green);
+        $('#'+ (i+1) +'').css('background-color', green); //should be the state instead
         timeList[i] = $('td:nth-child(5)','#'+ (i+1) +'').text();
     }
     console.log(timeList);
@@ -142,14 +143,6 @@ function updateConflict(){
                 $('#'+ (j+1)+ ', #' + (k+1)+ '').css('background-color', red);
                 //update the state of that course, for now I don't think it is necessary
             }
-            /*else{
-                if($('#'+ (j+1)+ '').css('background-color') === red){
-                    $('#'+ (j+1)+ '').css('background-color', green);
-                }
-                else if($('#'+ (k+1)+ '').css('background-color') === red){
-                    $('#'+ (k+1)+ '').css('background-color', green);
-                }
-            }*/
             console.log(checkConflict(timeList[j],timeList[k])); //for testing, commented when done
         }
     }

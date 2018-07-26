@@ -2,7 +2,6 @@ chrome.runtime.sendMessage({action: "show"});
 
 /* TODO (ARRAY VERSION): 
     - If course is ARR, waitlisted or filled, change state to yellow (in addCourse() and also add a yellow string after soc when add in to addOrder, so can get it color)
-    - Reset lab of picked course color after mark conflicted
     - Check CSS of the #gradeCalc
     - Allow user to export table
     - Consider using json serialization to store needed data
@@ -13,6 +12,7 @@ chrome.runtime.sendMessage({action: "show"});
     DONE TODO:
     - Revise updateConflict logic, and fix problem where 2 course conflict, remove 1 but the other still marked red
     - Revise calculateGPA
+    - Reset lab of picked course color after mark conflicted
     
     How to make code clear: Name Description Params Return + Search for JS Style Guide
 */
@@ -174,25 +174,42 @@ function updateConflict(){
     var timeList = [];
     for(var i=0; i < order; i++){
         //reset color
-        $('#'+ (i+1) +'').css('background-color', green); //should be the state instead
+        $('#'+ i +'').css('background-color', green); //should be the state instead
+        
         //reset color of the coursetable picked course also
-        $('#'+ addOrder[i] +'').css('background-color', green); //what about lab
-        timeList[i] = $('td:nth-child(5)','#'+ (i+1) +'').text();
+        if($('#'+ i+ '').attr('class') === 'lab'){
+            $('#'+ addOrder[i-1] +'').next().css('background-color', green);
+        }
+        else{$('#'+ addOrder[i] +'').css('background-color', green);}
+        
+        timeList[i] = $('td:nth-child(5)','#'+ (i) +'').text();
     }
     //console.log(timeList);
     
     for(var j=0; j < order-1; j++){
         for(var k=j+1; k < order; k++){
             if(checkConflict(timeList[j],timeList[k])){ 
-                $('#'+ (j+1)+ ', #' + (k+1)+ '').css('background-color', red);
+                $('#'+ j+ ', #' + k+ '').css('background-color', red);
+                
+                if($('#'+ j+ '').attr('class') === 'lab'){
+                    if($('#'+ k+ '').attr('class') === 'lab'){
+                        $('#'+ addOrder[k-1] +'').next().css('background-color', red);
+                    }
+                    $('#'+ addOrder[j-1] +'').next().css('background-color', red);
+                }
+                else if($('#'+ k+ '').attr('class') === 'lab'){
+                    $('#'+ addOrder[k-1] +'').next().css('background-color', red);
+                }
+                
                 $('#'+ addOrder[j]+ ', #' + addOrder[k]+ '').css('background-color', red);
+                
                 console.log(addOrder);
                 //update the state of that course, for now I don't think it is necessary
             }
             //console.log(checkConflict(timeList[j],timeList[k])); for testing, commented when done
         }
     }
-} //have it done, but logic-wise? Also have a problem with coloring, pick 2 conflict and remove one, still have one red
+} 
 
 //hard-reset version
 function updateCredit(){
@@ -234,14 +251,14 @@ function addCourse(tr){
             courseData.push(data);
         }
     });
-    
+    console.log(courseData[10]);
     var instRoom = courseData[11].split(/([A-Z][A-Z].*)/);
     
     var course = new Course(courseData[1],courseData[2],courseData[3],courseData[4],courseData[5],
                             courseData[6],courseData[7],courseData[9],courseData[10],instRoom[0],instRoom[1]);
-    var labRegex = /(L[A-Z])$/;
+    var labCheck = /(L[A-Z])$/;
     var next = $(tr).next();
-    if(labRegex.test($('td:nth-child(2)', next).text())){
+    if(labCheck.test($('td:nth-child(2)', next).text())){
         course.lab = true;
     }
             
@@ -249,12 +266,12 @@ function addCourse(tr){
     
     var gradeList = '<select id="grade"><option></option><option value="4.0">A</option><option value="3.67">A-</option><option value="3.33">B+</option><option value="3.0">B</option><option value="2.67">B-</option><option value="2.33">C+</option><option value="2.0">C</option><option value="1.67">C-</option><option value="1.33">D+</option><option value="1.0">D</option><option value="0.67">D-</option><option value="0.0">F</option>';
 
-    $('#courseInfo').append('<tr id="'+ addOrder.length + '" style="background-color:'+ course.state + '"><td><button>' + course.SOC + 
+    $('#courseInfo').append('<tr id="'+ (addOrder.length-1) + '" style="background-color:'+ course.state + '"><td><button>' + course.SOC + 
                                 '</button></td><td>'+ course.crse + '</td><td>' + course.desc + '</td><td id="cred">' + course.cred + '</td><td>' + course.time + 
                                 '</td><td>' + course.area + '</td><td>' + course.comp + '</td><td>' + course.inst + '</td><td>' + course.room + '</td><td>' + gradeList +
                                 '</td></tr>');
         
-        $('#'+ addOrder.length +' button').click(function(){
+        $('#'+ (addOrder.length-1) +' button').click(function(){
             $(tr)[0].scrollIntoView();
         })
         $(tr).css('background-color', course.state);
@@ -264,7 +281,7 @@ function addCourse(tr){
             addOrder.push(course.SOC+' lab');;
             //value.labTime = next.children(':nth-child(5)').text(); left here just in case if need lab time
             
-            $('#courseInfo').append('<tr id="'+ addOrder.length + '" class="lab" style="background-color:'+ course.state + '"><td>' +
+            $('#courseInfo').append('<tr id="'+ (addOrder.length-1) + '" class="lab" style="background-color:'+ course.state + '"><td>' +
                                     next.children(':nth-child(2)').text() +'</td><td></td><td>'+ next.children(':nth-child(3)').text() +'</td><td></td><td>' +
                                     next.children(':nth-child(5)').text() + '</td><td></td><td></td><td></td><td>' + 
                                     next.children(':nth-child(10)').text() + '</td><td></td></tr>');
@@ -280,21 +297,19 @@ function removeCourse(tr){
     
     //lab situation
     if($(tr).next().children().text() != ''){
-        $('#'+ (addOrder.indexOf(id) +1).toString() +'').remove();
-        $('#'+ (addOrder.indexOf(id) +2).toString() +'').remove();
+        $('#'+ index.toString() +'').remove();
+        $('#'+ (index+1).toString() +'').remove();
         addOrder.splice(index,2);
         $(tr).next().css('background-color', 'white');
     }
     else{
-        $('#'+ (addOrder.indexOf(id) +1).toString() +'').remove();
+        $('#'+ addOrder.indexOf(id).toString() +'').remove();
         addOrder.splice(index,1);
     }
     //uncolor checked box tr
     $(tr).css('background-color', 'white');
-    //if there is a lab, then uncolor it too
     
-    
-    var reOrd = 1;
+    var reOrd = 0;
     $('#courseInfo tr').each(function(){
         $(this).attr('id', reOrd.toString());
         reOrd++;

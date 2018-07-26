@@ -1,28 +1,26 @@
 chrome.runtime.sendMessage({action: "show"});
 
 /* TODO (ARRAY VERSION): 
-    - Revise calculateGPA, shrink if possible. Also check CSS of the #gradeCalc
+    - If course is ARR, waitlisted or filled, change state to yellow (in addCourse() and also add a yellow string after soc when add in to addOrder, so can get it color)
+    - Reset lab of picked course color after mark conflicted
+    - Check CSS of the #gradeCalc
     - Allow user to export table
     - Consider using json serialization to store needed data
     - Consider add id for each tr so can have easy access, like $('#1 #cred') to get credit of first picked class, so will easy to calculate GPA later on.
     - Revise code logic
-    - Sync the color between course in toptable w/ coursetable (Done, but still need to fix border color, and in case color change to red)
     - If course offer P/F, tell user in textarea
-    - If course is ARR, waitlisted or filled, change state to yellow (where to do this? add course or update table)
+
+    DONE TODO:
+    - Revise updateConflict logic, and fix problem where 2 course conflict, remove 1 but the other still marked red
+    - Revise calculateGPA
+    
+    How to make code clear: Name Description Params Return + Search for JS Style Guide
 */
 
-/* DONE TODO:
-- Revise updateConflict logic, and fix problem where 2 course conflict, remove 1 but the other still marked red
-*/
-
-//Name Description Params Return
-//GG JS Style Guide
-
+//Color used
 var green = '#c8f08c';
 var yellow = '#f0e68c';
 var red = '#f0b48c';
-
-$('table:nth-child(5) tbody').attr('id','courseTable');//add main table tag //this should be moved to main funct after document.ready tho
 
 //Course constructor
 function Course(pSOC, pCrse, pDesc, pCred, pTime, pArea, pCmp, pPf, pCond, pInst, pRoom){ //later get individual Inst Room
@@ -73,7 +71,6 @@ function calculateGPA(){
             $('#updateButton').prop("disabled", false);
             oldGrade = parseFloat((parseFloat($('#oldGPA').val())* parseFloat($('#credTaken').val())).toFixed(2));
             oldCredit = parseFloat($('#credTaken').val());
-            console.log(oldGrade + " " + oldCredit);
         }
         else{$('#updateButton').prop("disabled", true);}
     });
@@ -107,7 +104,6 @@ function calculateGPA(){
 
 function checkConflict(time1, time2){
     if(time1.match('ARR') || time2.match('ARR')){
-        console.log('ARR check.');
         return false;
     } 
     
@@ -115,9 +111,7 @@ function checkConflict(time1, time2){
     var timeArray2 = time2.split(' ');
     
     var day1= timeArray1[timeArray1.length-1].replace(/\s+/, ''); //replace use regex to remove whitespace
-    //console.log(day1); for testing
     var day2= timeArray2[timeArray2.length-1].replace(/\s+/, '').split('');
-    //console.log(day2); for testing
     
     var dayConflict = false;
     for(var i=0; i<day2.length;i++){
@@ -181,17 +175,21 @@ function updateConflict(){
     for(var i=0; i < order; i++){
         //reset color
         $('#'+ (i+1) +'').css('background-color', green); //should be the state instead
+        //reset color of the coursetable picked course also
+        $('#'+ addOrder[i] +'').css('background-color', green); //what about lab
         timeList[i] = $('td:nth-child(5)','#'+ (i+1) +'').text();
     }
-    console.log(timeList);
+    //console.log(timeList);
     
     for(var j=0; j < order-1; j++){
         for(var k=j+1; k < order; k++){
             if(checkConflict(timeList[j],timeList[k])){ 
                 $('#'+ (j+1)+ ', #' + (k+1)+ '').css('background-color', red);
+                $('#'+ addOrder[j]+ ', #' + addOrder[k]+ '').css('background-color', red);
+                console.log(addOrder);
                 //update the state of that course, for now I don't think it is necessary
             }
-            console.log(checkConflict(timeList[j],timeList[k])); //for testing, commented when done
+            //console.log(checkConflict(timeList[j],timeList[k])); for testing, commented when done
         }
     }
 } //have it done, but logic-wise? Also have a problem with coloring, pick 2 conflict and remove one, still have one red
@@ -226,8 +224,15 @@ function addCourse(tr){
     var courseData = [];
     
     $(tr).children('td').each(function(){
-        var data = $(this).text();
-        courseData.push(data);
+        //for course name, get it name and also link
+        if($(this).find('nobr').length){
+            var data = $(this).find('nobr').html();
+            courseData.push(data);
+        }
+        else{
+            var data = $(this).text();
+            courseData.push(data);
+        }
     });
     
     var instRoom = courseData[11].split(/([A-Z][A-Z].*)/);
@@ -238,7 +243,6 @@ function addCourse(tr){
     var next = $(tr).next();
     if(labRegex.test($('td:nth-child(2)', next).text())){
         course.lab = true;
-        console.log("Class w/ lab");
     }
             
     addOrder.push(course.SOC);
@@ -257,8 +261,7 @@ function addCourse(tr){
         
         
         if(course.lab){
-            addOrder.push(course.SOC+' lab');
-            console.log("Add lab");
+            addOrder.push(course.SOC+' lab');;
             //value.labTime = next.children(':nth-child(5)').text(); left here just in case if need lab time
             
             $('#courseInfo').append('<tr id="'+ addOrder.length + '" class="lab" style="background-color:'+ course.state + '"><td>' +
@@ -280,13 +283,11 @@ function removeCourse(tr){
         $('#'+ (addOrder.indexOf(id) +1).toString() +'').remove();
         $('#'+ (addOrder.indexOf(id) +2).toString() +'').remove();
         addOrder.splice(index,2);
-        console.log(addOrder);
         $(tr).next().css('background-color', 'white');
     }
     else{
         $('#'+ (addOrder.indexOf(id) +1).toString() +'').remove();
         addOrder.splice(index,1);
-        console.log(addOrder);
     }
     //uncolor checked box tr
     $(tr).css('background-color', 'white');
@@ -305,7 +306,6 @@ function checkCB(){
         var tr = $(this).closest('tr');
         if(this.checked){
             addCourse(tr);
-            //console.log(addOrder);
             updateConflict();
             updateCredit();
         }
@@ -318,15 +318,14 @@ function checkCB(){
 }
 
 $(document).ready(function(){
+    $('table:nth-child(5) tbody').attr('id','courseTable');
+    //collapse border so can highlight whole tr
+    $('#courseTable').parent().css('border-collapse','collapse');
+    
     injectDOM();
     checkCB();
     calculateGPA();
 })
 
-/*how to find lab for courses that have lab?
-    - if Next <tr td:nth-child(2)> matches /LA$/, add that <tr> into table
-    - if the 4th <tr> have an id, then next <tr> will be lab, add it to table
-    - add id for lab (necessary? consider running time)
-*/
 
 

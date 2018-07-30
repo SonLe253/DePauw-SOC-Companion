@@ -22,6 +22,8 @@ var green = '#c8f08c';
 var yellow = '#f0e68c';
 var red = '#f0b48c';
 
+var gradeList = '<select id="grade"><option></option><option value="4.0">A</option><option value="3.67">A-</option><option value="3.33">B+</option><option value="3.0">B</option><option value="2.67">B-</option><option value="2.33">C+</option><option value="2.0">C</option><option value="1.67">C-</option><option value="1.33">D+</option><option value="1.0">D</option><option value="0.67">D-</option><option value="0.0">F</option>';
+
 function injectDOM(){
     //the following lines are for injecting checkboxes
     $('#courseTable tr:nth-child(2)').prepend("<td></td>"); 
@@ -34,9 +36,9 @@ function injectDOM(){
     //the following lines are for adding add-in table
     $('body').prepend('<table id="topTable" style="border-collapse:collapse;border-spacing:0"></table>');
     
-    $('#topTable').html('<thead><tr><th id="creditCount" colspan="4">Credit selected: 0</th><td id="gradeCalc" colspan="6"></td></tr><tr style="background-color:#fcff2f;text-align:center"><td>SOC</td><td>Course</td><td>Description</td><td>Credit</td><td>Time</td><td>Area</td><td>Comp</td><td>Instructor</td><td>Room</td><td>Grade</td></tr><tbody id="courseInfo"></tbody>');
+    $('#topTable').html('<thead><tr><th id="creditCount" colspan="4">Credit selected: 0</th><td id="gradeCalc" colspan="7"></td></tr><tr style="background-color:#fcff2f;text-align:center"><td>SOC</td><td>Course</td><td>Description</td><td>Credit</td><td>Time</td><td>Area</td><td>Comp</td><td>Instructor</td><td>Room</td><td>Status</td><td>Grade</td></tr><tbody id="courseInfo"></tbody>');
     
-    $('#topTable td, #topTable th').css({'font-family':'Arial, sans-serif','font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px','border-color':'black','text-align':'center'}); //deleted property: 'word-break':'normal','overflow':'hidden'
+    $('#topTable td, #topTable th').css({'font-family':'Arial, sans-serif','font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px','text-align':'center'}); //deleted property: 'word-break':'normal','overflow':'hidden'
     
     //the following line are for gradeCalc
     $('#gradeCalc').css('text-align', 'left');
@@ -220,6 +222,18 @@ function updateCredit(){
 var addOrder = [];
 
 function addCourse(tr){
+/*
+   soc = courseData[1]
+   crse = courseData[2]
+   desc = courseData[3]
+   cred = courseData[4]
+   time = courseData[5]
+   area = courseData[6]
+   comp = courseData[7]
+   status = courseData[10]
+   inst = instRoom[0]
+   room = instRoom[1]
+*/
     var courseData = [];
     
     $(tr).children('td').each(function(){
@@ -233,43 +247,59 @@ function addCourse(tr){
             courseData.push(data);
         }
     });
-    console.log(courseData[10]);
+
     var instRoom = courseData[11].split(/([A-Z][A-Z].*)/);
     
-    var course = new Course(courseData[1],courseData[2],courseData[3],courseData[4],courseData[5],
-                            courseData[6],courseData[7],courseData[9],courseData[10],instRoom[0],instRoom[1]);
-    var labCheck = /(L[A-Z])$/;
-    var next = $(tr).next();
-    if(labCheck.test($('td:nth-child(2)', next).text())){
-        course.lab = true;
+    var status = courseData[10].split(" ");
+    console.log("status1: " + status[0]+ " status2: " + status[1]);
+    var statusString = status[0];
+    
+    if(status[1].match(/\(+/)){
+        console.log("match!");
+        statusString += "(WL)";
+        var waitlist = true;
+    }
+    
+    var noStudent = status[0].split("/");
+    if(parseInt(noStudent[0])>=parseInt(noStudent[1])){
+        var filled = true;
     }
             
-    addOrder.push(course.SOC);
+    addOrder.push(courseData[1]);
+    var id = addOrder.length-1;
     
-    var gradeList = '<select id="grade"><option></option><option value="4.0">A</option><option value="3.67">A-</option><option value="3.33">B+</option><option value="3.0">B</option><option value="2.67">B-</option><option value="2.33">C+</option><option value="2.0">C</option><option value="1.67">C-</option><option value="1.33">D+</option><option value="1.0">D</option><option value="0.67">D-</option><option value="0.0">F</option>';
-
-    $('#courseInfo').append('<tr id="'+ (addOrder.length-1) + '" style="background-color:'+ course.state + '"><td><button>' + course.SOC + 
-                                '</button></td><td>'+ course.crse + '</td><td>' + course.desc + '</td><td id="cred">' + course.cred + '</td><td>' + course.time + 
-                                '</td><td>' + course.area + '</td><td>' + course.comp + '</td><td>' + course.inst + '</td><td>' + course.room + '</td><td>' + gradeList +
-                                '</td></tr>');
+    $('#courseInfo').append('<tr id="'+ id + '" style="background-color:'+ green + '"><td><button>' + courseData[1] + 
+                                '</button></td><td>'+ courseData[2] + '</td><td>' + courseData[3] + '</td><td id="cred">' + courseData[4] + '</td><td id="time">' + courseData[5] + 
+                                '</td><td>' + courseData[6] + '</td><td>' + courseData[7] + '</td><td>' + instRoom[0] + '</td><td id="room">' + instRoom[1] + '</td><td id="status">'+ statusString +'</td><td>' + gradeList + '</td></tr>');
         
-        $('#'+ (addOrder.length-1) +' button').click(function(){
+        $('#'+ id +' button').click(function(){
             $(tr)[0].scrollIntoView();
         })
-        $(tr).css('background-color', course.state);
+        $(tr).css('background-color', green);
         
-        
-        if(course.lab){
-            addOrder.push(course.SOC+' lab');;
-            //value.labTime = next.children(':nth-child(5)').text(); left here just in case if need lab time
+    if(waitlist || filled){
+        $('#'+id +' #status').css('background-color', yellow);
+        $('#'+id +' #status').attr('class', 'yellow');
+    }
+    
+    if(courseData[5].match('ARR')){
+        $('#'+id +' #time').css('background-color', yellow);
+        $('#'+id +' #room').css('background-color', yellow);
+    }
+    
+    var labCheck = /(L[A-Z])$/;
+    var lab = $(tr).next();
+    if(labCheck.test($('td:nth-child(2)', lab).text())){
+        addOrder.push(courseData[1]+' lab');;
+        //value.labTime = next.children(':nth-child(5)').text(); left here just in case if need lab time
             
-            $('#courseInfo').append('<tr id="'+ (addOrder.length-1) + '" class="lab" style="background-color:'+ course.state + '"><td>' +
-                                    next.children(':nth-child(2)').text() +'</td><td></td><td>'+ next.children(':nth-child(3)').text() +'</td><td></td><td>' +
-                                    next.children(':nth-child(5)').text() + '</td><td></td><td></td><td></td><td>' + 
-                                    next.children(':nth-child(10)').text() + '</td><td></td></tr>');
-            next.css({'background-color': course.state, 'border-color': course.state});
-        }
-     $('#courseInfo td').css({'font-family':'Arial, sans-serif','font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px','overflow':'hidden','border-color':'black'});
+        $('#courseInfo').append('<tr id="'+ id + '" class="lab" style="background-color:'+ green + '"><td>' +
+                                lab.children(':nth-child(2)').text() +'</td><td></td><td>'+ lab.children(':nth-child(3)').text() +'</td><td></td><td>' +
+                                lab.children(':nth-child(5)').text() + '</td><td></td><td></td><td></td><td>' + 
+                                lab.children(':nth-child(10)').text() + '</td><td></td><td></td></tr>');
+        lab.css('background-color', green);
+    }
+    $('#courseInfo td').css({'font-size':'12px','padding':'10px 5px','border-width': '1px','border-style': 'solid'});
 }
 
 function removeCourse(tr){

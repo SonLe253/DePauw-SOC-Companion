@@ -22,24 +22,6 @@ var green = '#c8f08c';
 var yellow = '#f0e68c';
 var red = '#f0b48c';
 
-//Course constructor
-function Course(pSOC, pCrse, pDesc, pCred, pTime, pArea, pCmp, pPf, pCond, pInst, pRoom){ //later get individual Inst Room
-    this.SOC = pSOC;
-    this.crse = pCrse;
-    this.desc = pDesc;
-    this.cred = pCred;
-    this.time = pTime;
-    this.area = pArea;
-    this.comp = pCmp;
-    this.inst = pInst;
-    this.room = pRoom;
-    this.pf = pPf;
-    this.cond = pCond;
-    this.state = green;
-    this.lab = false;
-    // should i do H/L also?
-} 
-
 function injectDOM(){
     //the following lines are for injecting checkboxes
     $('#courseTable tr:nth-child(2)').prepend("<td></td>"); 

@@ -13,6 +13,7 @@ chrome.runtime.sendMessage({action: "show"});
     - Revise updateConflict logic, and fix problem where 2 course conflict, remove 1 but the other still marked red
     - Revise calculateGPA
     - Reset lab of picked course color after mark conflicted
+    - If course is ARR, waitlisted or filled, change state to yellow (in addCourse() and also add a yellow string after soc when add in to addOrder, so can get it color)
     
     How to make code clear: Name Description Params Return + Search for JS Style Guide
 */
@@ -38,12 +39,14 @@ function injectDOM(){
     
     $('#topTable').html('<thead><tr><th id="creditCount" colspan="4">Credit selected: 0</th><td id="gradeCalc" colspan="7"></td></tr><tr style="background-color:#fcff2f;text-align:center"><td>SOC</td><td>Course</td><td>Description</td><td>Credit</td><td>Time</td><td>Area</td><td>Comp</td><td>Instructor</td><td>Room</td><td>Status</td><td>Grade</td></tr><tbody id="courseInfo"></tbody>');
     
-    $('#topTable td, #topTable th').css({'font-family':'Arial, sans-serif','font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px','text-align':'center'}); //deleted property: 'word-break':'normal','overflow':'hidden'
+    $('#topTable td, #topTable th').css({'font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px'}); //deleted property: 'word-break':'normal','overflow':'hidden'
     
     //the following line are for gradeCalc
     $('#gradeCalc').css('text-align', 'left');
     $('#gradeCalc').html('<label for="oldGPA">Current GPA: </label><input id="oldGPA" type="number" name="oldGPA" step="0.01" min="0" max="4" style="width:3.5em"><label for="credTaken"> Credit taken: </label><input id="credTaken" type="number" name="credTaken" step="0.25" min="0" style="width:4.25em; margin-right:0.5em"><button disabled id="updateButton" style="float:right">Update</button><p style="font-size:12px"><span id="newGPA"> Expected GPA: </span><a href="https://my.depauw.edu/e/student/grades_rpt.asp?r=H" target="_blank" style="text-align: right;float: right;">Check grade</a></p>');
     
+    $('body').prepend('<table id="floatTable" style="border-collapse:collapse;border-spacing:0"></table>');
+    $('#floatTable').html('<tbody><tr><td>Fill</td></tr></tbody>')
 }
 
 //hard-reset version
@@ -290,6 +293,7 @@ function addCourse(tr){
     var labCheck = /(L[A-Z])$/;
     var lab = $(tr).next();
     if(labCheck.test($('td:nth-child(2)', lab).text())){
+        id++;
         addOrder.push(courseData[1]+' lab');;
         //value.labTime = next.children(':nth-child(5)').text(); left here just in case if need lab time
             
@@ -300,7 +304,6 @@ function addCourse(tr){
         lab.css('background-color', green);
     }
     $('#courseInfo td').css({'font-size':'12px','padding':'10px 5px','border-width': '1px','border-style': 'solid'});
-    console.log(addOrder);
 }
 
 function removeCourse(tr){
@@ -310,7 +313,6 @@ function removeCourse(tr){
     
     //lab situation
     if($(tr).next().children().text() != ''){
-        console.log("Remove lab");
         $('#'+ index.toString() +'').remove();
         $('#'+ (index+1).toString() +'').remove();
         addOrder.splice(index,2);
@@ -345,6 +347,8 @@ function checkCB(){
         }
     });
 }
+
+//function updateFloat()
 
 $(document).ready(function(){
     $('table:nth-child(5) tbody').attr('id','courseTable');

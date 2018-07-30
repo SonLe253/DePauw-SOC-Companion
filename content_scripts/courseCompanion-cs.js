@@ -1,7 +1,7 @@
 chrome.runtime.sendMessage({action: "show"});
 
 /* TODO (ARRAY VERSION): 
-    - If course is ARR, waitlisted or filled, change state to yellow (in addCourse() and also add a yellow string after soc when add in to addOrder, so can get it color)
+    - Work on float table, and add float table tr code in addCourse(tr), same thing with removeCourse(tr), try not to use a hard reset updateFloat() method
     - Check CSS of the #gradeCalc
     - Allow user to export table
     - Consider using json serialization to store needed data
@@ -45,8 +45,9 @@ function injectDOM(){
     $('#gradeCalc').css('text-align', 'left');
     $('#gradeCalc').html('<label for="oldGPA">Current GPA: </label><input id="oldGPA" type="number" name="oldGPA" step="0.01" min="0" max="4" style="width:3.5em"><label for="credTaken"> Credit taken: </label><input id="credTaken" type="number" name="credTaken" step="0.25" min="0" style="width:4.25em; margin-right:0.5em"><button disabled id="updateButton" style="float:right">Update</button><p style="font-size:12px"><span id="newGPA"> Expected GPA: </span><a href="https://my.depauw.edu/e/student/grades_rpt.asp?r=H" target="_blank" style="text-align: right;float: right;">Check grade</a></p>');
     
-    $('body').prepend('<table id="floatTable" style="border-collapse:collapse;border-spacing:0"></table>');
-    $('#floatTable').html('<tbody><tr><td>Fill</td></tr></tbody>')
+    $('body').prepend('<table id="floatTable" style="border-collapse:collapse;border-spacing:0;position:fixed;top:20px;right:0px"></table>');
+    $('#floatTable').html('<tbody id="floatBody"></tbody>').hide();
+    
 }
 
 //hard-reset version
@@ -339,16 +340,39 @@ function checkCB(){
             addCourse(tr);
             updateConflict();
             updateCredit();
+            updateFloat();
         }
         else{
             removeCourse(tr);
             updateConflict();
-            updateCredit();
+            updateCredit();    
+            updateFloat();
         }
     });
 }
 
-//function updateFloat()
+function updateFloat(){
+    $('#floatBody').empty();
+    var topofDiv = $("#topTable").offset().top; //gets offset of header
+    var height = $("#topTable").outerHeight(); //gets height of header
+    var minString;
+    
+    $('#courseInfo tr').each(function(){
+        minString= $('td:nth-child(1)', this).text() + '_' + $('td:nth-child(2)', this).text();
+        console.log(minString);
+        $('#floatBody').append('<tr style="font-size:10px; background-color:'+ $(this).css('background-color')+ '"><td>'+ minString+'</td></tr>');
+    });
+    
+    // make floatbox hidden when toptable is in focus
+    $(document).scroll(function(){
+        if($(document).scrollTop() > (topofDiv + height)){
+            $("#floatTable").show();  
+        }
+        else{
+            $("#floatTable").hide();
+        }
+    });     
+}
 
 $(document).ready(function(){
     $('table:nth-child(5) tbody').attr('id','courseTable');

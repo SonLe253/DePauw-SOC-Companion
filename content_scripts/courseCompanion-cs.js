@@ -300,6 +300,7 @@ function addCourse(tr){
         lab.css('background-color', green);
     }
     $('#courseInfo td').css({'font-size':'12px','padding':'10px 5px','border-width': '1px','border-style': 'solid'});
+    console.log(addOrder);
 }
 
 function removeCourse(tr){
@@ -309,6 +310,7 @@ function removeCourse(tr){
     
     //lab situation
     if($(tr).next().children().text() != ''){
+        console.log("Remove lab");
         $('#'+ index.toString() +'').remove();
         $('#'+ (index+1).toString() +'').remove();
         addOrder.splice(index,2);

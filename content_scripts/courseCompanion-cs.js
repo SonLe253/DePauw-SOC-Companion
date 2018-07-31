@@ -1,6 +1,8 @@
 chrome.runtime.sendMessage({action: "show"});
 
 /* TODO (ARRAY VERSION): 
+    - switch all unneeded id to class
+    - Add lab to float table, and floatTable to removeCourse, sync color when conflict (in updateConflict) between top and float table
     - Work on float table, and add float table tr code in addCourse(tr), same thing with removeCourse(tr), try not to use a hard reset updateFloat() method
     - Check CSS of the #gradeCalc
     - Allow user to export table
@@ -272,23 +274,27 @@ function addCourse(tr){
     addOrder.push(courseData[1]);
     var id = addOrder.length-1;
     
-    $('#courseInfo').append('<tr id="'+ id + '" style="background-color:'+ green + '"><td><button>' + courseData[1] + 
+    $('#courseInfo').append('<tr id="'+ id + '" class="course'+ id+ '" style="background-color:'+ green + '"><td><button>' + courseData[1] + 
                                 '</button></td><td>'+ courseData[2] + '</td><td>' + courseData[3] + '</td><td id="cred">' + courseData[4] + '</td><td id="time">' + courseData[5] + 
                                 '</td><td>' + courseData[6] + '</td><td>' + courseData[7] + '</td><td>' + instRoom[0] + '</td><td id="room">' + instRoom[1] + '</td><td id="status">'+ statusString +'</td><td>' + gradeList + '</td></tr>');
         
-        $('#'+ id +' button').click(function(){
-            $(tr)[0].scrollIntoView();
-        })
-        $(tr).css('background-color', green);
-        
+    $('#'+ id +' button').click(function(){
+        $(tr)[0].scrollIntoView();
+    })
+    $(tr).css('background-color', green);
+    
+    var minString;
+    minString= courseData[1] + '_' + courseData[2];
+    $('#floatBody').append('<tr class="course'+ id+ '" style="font-size:10px; background-color:'+ green+ '"><td>'+ minString+'</td><td>'+ courseData[4]+'</td><td id="time">'+ courseData[5]+ '</td><td>'+ courseData[6]+ '</td><td>'+ courseData[7]+ '</td><td id="room">'+ instRoom[1] +'</td><td id="status">'+ statusString +'</td></tr>');
+    
     if(waitlist || filled){
-        $('#'+id +' #status').css('background-color', yellow);
-        $('#'+id +' #status').attr('class', 'yellow');
+        $('.course'+id +' #status').css('background-color', yellow);
+        //$('.course'+id +' #status').attr('class', 'yellow');
     }
     
     if(courseData[5].match('ARR')){
-        $('#'+id +' #time').css('background-color', yellow);
-        $('#'+id +' #room').css('background-color', yellow);
+        $('.course'+id +' #time').css('background-color', yellow);
+        $('.course'+id +' #room').css('background-color', yellow);
     }
     
     var labCheck = /(L[A-Z])$/;
@@ -299,10 +305,16 @@ function addCourse(tr){
         //value.labTime = next.children(':nth-child(5)').text(); left here just in case if need lab time
             
         $('#courseInfo').append('<tr id="'+ id + '" class="lab" style="background-color:'+ green + '"><td>' +
-                                lab.children(':nth-child(2)').text() +'</td><td></td><td>'+ lab.children(':nth-child(3)').text() +'</td><td></td><td>' +
-                                lab.children(':nth-child(5)').text() + '</td><td></td><td></td><td></td><td>' + 
+                                lab.children(':nth-child(2)').text() +'</td><td></td><td>'+ lab.children(':nth-child(3)').text() +'</td><td></td><td class="time">' +
+                                lab.children(':nth-child(5)').text() + '</td><td></td><td></td><td></td><td class= "room">' + 
                                 lab.children(':nth-child(10)').text() + '</td><td></td><td></td></tr>');
         lab.css('background-color', green);
+        if(lab.children(':nth-child(5)').text().match('ARR')){
+            $('#'+ id+' .time').css('background-color', yellow);
+        }
+        if(lab.children(':nth-child(10)').text().match('ARR')){
+            $('#'+ id+' .room').css('background-color', yellow);
+        }
     }
     $('#courseInfo td').css({'font-size':'12px','padding':'10px 5px','border-width': '1px','border-style': 'solid'});
 }
@@ -352,16 +364,16 @@ function checkCB(){
 }
 
 function updateFloat(){
-    $('#floatBody').empty();
+    //$('#floatBody').empty();
     var topofDiv = $("#topTable").offset().top; //gets offset of header
     var height = $("#topTable").outerHeight(); //gets height of header
-    var minString;
+    /*var minString;
     
     $('#courseInfo tr').each(function(){
         minString= $('td:nth-child(1)', this).text() + '_' + $('td:nth-child(2)', this).text();
         console.log(minString);
         $('#floatBody').append('<tr style="font-size:10px; background-color:'+ $(this).css('background-color')+ '"><td>'+ minString+'</td></tr>');
-    });
+    });*/
     
     // make floatbox hidden when toptable is in focus
     $(document).scroll(function(){

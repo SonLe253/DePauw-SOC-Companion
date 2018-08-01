@@ -4,10 +4,11 @@ chrome.runtime.sendMessage({action: "show"});
     - Allow user to save other input(grade)
     - Allow user to delete course on table
     - Allow user to export table
+    - If course offer P/F, tell user
     - Check CSS of the #gradeCalc
     - Consider using json serialization to store needed data
-    - Revise code logic
-    - If course offer P/F, tell user in textarea
+    
+    - Revise code logic, delete all the debug line when done
 
     DONE TODO:    
     - Add lab to float table, and floatTable to removeCourse, sync color when conflict (in updateConflict) between top and float table

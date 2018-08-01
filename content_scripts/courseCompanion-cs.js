@@ -123,17 +123,17 @@ function checkConflict(time1, time2){
     
     var timeStart1 = timeToDecimal(timeData1[0]);
     var timeEnd1 = timeToDecimal(timeData1[1]);
-    
+   
     var timeStart2 = timeToDecimal(timeData2[0]);
     var timeEnd2 = timeToDecimal(timeData2[1]);
-    
+
     if(timeStart1 < 8){
         timeStart1 += 12;
         timeEnd1 += 12;
     }
     
     else if(timeEnd1 < 8){
-        timeEnd1 +=12;
+        timeEnd1 += 12;
     }
     
     if(timeStart2 < 8){
@@ -141,8 +141,8 @@ function checkConflict(time1, time2){
         timeEnd2 += 12;
     }
     
-    else if(timeStart2 < 8){
-        timeEnd2 +=12;
+    else if(timeEnd2 < 8){
+        timeEnd2 += 12;
     }
     
     if(timeStart1 === timeStart2 || timeEnd1 === timeEnd2){
@@ -170,6 +170,7 @@ function updateConflict(){
         //reset color of the coursetable picked course also
         if($('#'+ i+ '').attr('class').includes('lab')){
             $('#'+ addOrder[i-1] +'').next().css('background-color', green);
+            console.log('reset lab');
         }
         else{$('#'+ addOrder[i] +'').css('background-color', green);}
         
@@ -180,7 +181,7 @@ function updateConflict(){
     for(var j=0; j < order-1; j++){
         for(var k=j+1; k < order; k++){
             if(checkConflict(timeList[j],timeList[k])){ 
-                $('#'+ j+ ', #' + k+ '').css('background-color', red);
+                $('.row'+ j+ ', .row' + k+ '').css('background-color', red);
                 
                 if($('#'+ j+ '').attr('class').includes('lab')){
                     if($('#'+ k+ '').attr('class').includes('lab')){
@@ -334,13 +335,13 @@ function removeCourse(tr){
     
     //lab situation
     if($(tr).next().children().text() != ''){
-        $('#'+ index.toString() +'').remove();
-        $('#'+ (index+1).toString() +'').remove();
+        $('.row'+ index.toString() +'').remove();
+        $('.row'+ (index+1).toString() +'').remove();
         addOrder.splice(index,2);
         $(tr).next().css('background-color', 'white');
     }
     else{
-        $('#'+ addOrder.indexOf(id).toString() +'').remove();
+        $('.row'+ addOrder.indexOf(id).toString() +'').remove();
         addOrder.splice(index,1);
     }
     //uncolor checked box tr
@@ -349,8 +350,17 @@ function removeCourse(tr){
     var reOrd = 0;
     $('#courseInfo tr').each(function(){
         $(this).attr('id', reOrd.toString());
+        if($(this).attr('class').includes('lab')){
+            $(this).attr('class', "lab row"+reOrd.toString());
+        }
+        else{$(this).attr('class', "row"+reOrd.toString());}
         reOrd++;
-    })
+    });
+    reOrd= 0;
+    $('#floatBody tr').each(function(){
+        $(this).attr('class', "row"+reOrd.toString());
+        reOrd++;
+    });
 }
 
 function checkCB(){
@@ -372,18 +382,9 @@ function checkCB(){
 }
 
 function updateFloat(){
-    //$('#floatBody').empty();
     var topofDiv = $("#topTable").offset().top; //gets offset of header
     var height = $("#topTable").outerHeight(); //gets height of header
-    /*var minString;
-    
-    $('#courseInfo tr').each(function(){
-        minString= $('td:nth-child(1)', this).text() + '_' + $('td:nth-child(2)', this).text();
-        console.log(minString);
-        $('#floatBody').append('<tr style="font-size:10px; background-color:'+ $(this).css('background-color')+ '"><td>'+ minString+'</td></tr>');
-    });*/
-    
-    // make floatbox hidden when toptable is in focus
+ 
     $(document).scroll(function(){
         if($(document).scrollTop() > (topofDiv + height)){
             $("#floatTable").show();  
@@ -391,7 +392,8 @@ function updateFloat(){
         else{
             $("#floatTable").hide();
         }
-    });     
+    });
+    $('#floatBody td').css({'font-size':'10px','padding':'10px 5px','border-width': '1px','border-style': 'solid'});
 }
 
 $(document).ready(function(){

@@ -1,7 +1,6 @@
 chrome.runtime.sendMessage({action: "show"});
 
 /* TODO (ARRAY VERSION): 
-    - switch all unneeded id to class
     - Add lab to float table, and floatTable to removeCourse, sync color when conflict (in updateConflict) between top and float table
     - Work on float table, and add float table tr code in addCourse(tr), same thing with removeCourse(tr), try not to use a hard reset updateFloat() method
     - Check CSS of the #gradeCalc
@@ -11,7 +10,8 @@ chrome.runtime.sendMessage({action: "show"});
     - Revise code logic
     - If course offer P/F, tell user in textarea
 
-    DONE TODO:
+    DONE TODO:    
+    - switch all unneeded id to class
     - Revise updateConflict logic, and fix problem where 2 course conflict, remove 1 but the other still marked red
     - Revise calculateGPA
     - Reset lab of picked course color after mark conflicted
@@ -164,10 +164,11 @@ function updateConflict(){
     var timeList = [];
     for(var i=0; i < order; i++){
         //reset color
-        $('#'+ i +'').css('background-color', green); //should be the state instead
+        $('.row'+ i +'').css('background-color', green); 
+        
         
         //reset color of the coursetable picked course also
-        if($('#'+ i+ '').attr('class') === 'lab'){
+        if($('#'+ i+ '').attr('class').includes('lab')){
             $('#'+ addOrder[i-1] +'').next().css('background-color', green);
         }
         else{$('#'+ addOrder[i] +'').css('background-color', green);}
@@ -181,13 +182,13 @@ function updateConflict(){
             if(checkConflict(timeList[j],timeList[k])){ 
                 $('#'+ j+ ', #' + k+ '').css('background-color', red);
                 
-                if($('#'+ j+ '').attr('class') === 'lab'){
-                    if($('#'+ k+ '').attr('class') === 'lab'){
+                if($('#'+ j+ '').attr('class').includes('lab')){
+                    if($('#'+ k+ '').attr('class').includes('lab')){
                         $('#'+ addOrder[k-1] +'').next().css('background-color', red);
                     }
                     $('#'+ addOrder[j-1] +'').next().css('background-color', red);
                 }
-                else if($('#'+ k+ '').attr('class') === 'lab'){
+                else if($('#'+ k+ '').attr('class').includes('lab')){
                     $('#'+ addOrder[k-1] +'').next().css('background-color', red);
                 }
                 
@@ -205,7 +206,7 @@ function updateConflict(){
 function updateCredit(){
     var totalCredit = 0.0;
     $('#courseInfo tr').each(function(){
-        if($(this).attr('class') != "lab"){
+        if(!($(this).attr('class').includes("lab"))){
         totalCredit += parseFloat($('td:nth-child(4)',this).text());
         }
     })
@@ -274,7 +275,7 @@ function addCourse(tr){
     addOrder.push(courseData[1]);
     var id = addOrder.length-1;
     
-    $('#courseInfo').append('<tr id="'+ id + '" class="course'+ id+ '" style="background-color:'+ green + '"><td><button>' + courseData[1] + 
+    $('#courseInfo').append('<tr id="'+ id + '" class="row'+ id+ '" style="background-color:'+ green + '"><td><button>' + courseData[1] + 
                                 '</button></td><td>'+ courseData[2] + '</td><td>' + courseData[3] + '</td><td class="cred">' + courseData[4] + '</td><td class="time">' + courseData[5] + 
                                 '</td><td>' + courseData[6] + '</td><td>' + courseData[7] + '</td><td>' + instRoom[0] + '</td><td class="room">' + instRoom[1] + '</td><td class="status">'+ statusString +'</td><td>' + gradeList + '</td></tr>');
         
@@ -285,16 +286,18 @@ function addCourse(tr){
     
     var minString;
     minString= courseData[1] + '_' + courseData[2];
-    $('#floatBody').append('<tr class="course'+ id+ '" style="font-size:10px; background-color:'+ green+ '"><td>'+ minString+'</td><td>'+ courseData[4]+'</td><td class="time">'+ courseData[5]+ '</td><td>'+ courseData[6]+ '</td><td>'+ courseData[7]+ '</td><td class="room">'+ instRoom[1] +'</td><td class="status">'+ statusString +'</td></tr>');
+    $('#floatBody').append('<tr class="row'+ id+ '" style="font-size:10px; background-color:'+ green+ '"><td>'+ minString+'</td><td>'+ courseData[4]+'</td><td class="time">'+ courseData[5]+ '</td><td>'+ courseData[6]+ '</td><td>'+ courseData[7]+ '</td><td class="room">'+ instRoom[1] +'</td><td class="status">'+ statusString +'</td></tr>');
     
     if(waitlist || filled){
-        $('.course'+id +' .status').css('background-color', yellow);
-        //$('.course'+id +' #status').attr('class', 'yellow');
+        $('.row'+id +' .status').css('background-color', yellow);
     }
     
     if(courseData[5].match('ARR')){
-        $('.course'+id +' .time').css('background-color', yellow);
-        $('.course'+id +' .room').css('background-color', yellow);
+        $('.row'+id +' .time').css('background-color', yellow);
+    }
+    
+    if(instRoom[1].match('ARR')){
+        $('.row'+id +' .room').css('background-color', yellow);
     }
     
     var labCheck = /(L[A-Z])$/;
@@ -304,16 +307,21 @@ function addCourse(tr){
         addOrder.push(courseData[1]+' lab');;
         //value.labTime = next.children(':nth-child(5)').text(); left here just in case if need lab time
             
-        $('#courseInfo').append('<tr id="'+ id + '" class="lab" style="background-color:'+ green + '"><td>' +
+        $('#courseInfo').append('<tr id="'+ id + '" class="lab row'+ id + '" style="background-color:'+ green + '"><td>' +
                                 lab.children(':nth-child(2)').text() +'</td><td></td><td>'+ lab.children(':nth-child(3)').text() +'</td><td></td><td class="time">' +
                                 lab.children(':nth-child(5)').text() + '</td><td></td><td></td><td></td><td class= "room">' + 
                                 lab.children(':nth-child(10)').text() + '</td><td></td><td></td></tr>');
         lab.css('background-color', green);
+        
+        $('#floatBody').append('<tr class="row'+ id + '" style="font-size:10px; background-color:'+ green+ '"><td>Lab_'+ courseData[2]+'</td><td></td><td class="time">'+ lab.children(':nth-child(5)').text()+ '</td><td></td><td></td><td class="room">'+ lab.children(':nth-child(10)').text()+'</td><td></td></tr>');
+        
         if(lab.children(':nth-child(5)').text().match('ARR')){
             $('#'+ id+' .time').css('background-color', yellow);
+            $('.row'+ id+ ' .time').css('background-color', yellow);
         }
         if(lab.children(':nth-child(10)').text().match('ARR')){
             $('#'+ id+' .room').css('background-color', yellow);
+            $('.row'+ id+ ' .room').css('background-color', yellow);
         }
     }
     $('#courseInfo td').css({'font-size':'12px','padding':'10px 5px','border-width': '1px','border-style': 'solid'});

@@ -1,22 +1,24 @@
 chrome.runtime.sendMessage({action: "show"});
 
 /* TODO (ARRAY VERSION): 
-    - Add lab to float table, and floatTable to removeCourse, sync color when conflict (in updateConflict) between top and float table
-    - Work on float table, and add float table tr code in addCourse(tr), same thing with removeCourse(tr), try not to use a hard reset updateFloat() method
-    - Check CSS of the #gradeCalc
+    - Allow user to save other input(grade)
+    - Allow user to delete course on table
     - Allow user to export table
+    - Check CSS of the #gradeCalc
     - Consider using json serialization to store needed data
-    - Consider add id for each tr so can have easy access, like $('#1 #cred') to get credit of first picked class, so will easy to calculate GPA later on.
     - Revise code logic
     - If course offer P/F, tell user in textarea
 
     DONE TODO:    
+    - Add lab to float table, and floatTable to removeCourse, sync color when conflict (in updateConflict) between top and float table
+    - Work on float table, and add float table tr code in addCourse(tr), same thing with removeCourse(tr), try not to use a hard reset updateFloat() method
     - switch all unneeded id to class
     - Revise updateConflict logic, and fix problem where 2 course conflict, remove 1 but the other still marked red
     - Revise calculateGPA
     - Reset lab of picked course color after mark conflicted
     - If course is ARR, waitlisted or filled, change state to yellow (in addCourse() and also add a yellow string after soc when add in to addOrder, so can get it color)
-    
+    - Consider add id for each tr so can have easy access, like $('#1 #cred') to get credit of first picked class, so will easy to calculate GPA later on.
+
     How to make code clear: Name Description Params Return + Search for JS Style Guide
 */
 
@@ -26,6 +28,8 @@ var yellow = '#f0e68c';
 var red = '#f0b48c';
 
 var gradeList = '<select class="grade"><option></option><option value="4.0">A</option><option value="3.67">A-</option><option value="3.33">B+</option><option value="3.0">B</option><option value="2.67">B-</option><option value="2.33">C+</option><option value="2.0">C</option><option value="1.67">C-</option><option value="1.33">D+</option><option value="1.0">D</option><option value="0.67">D-</option><option value="0.0">F</option>';
+
+var addOrder = [];
 
 function injectDOM(){
     //the following lines are for injecting checkboxes
@@ -55,6 +59,23 @@ function injectDOM(){
     $('#floatTop').click(function(){
         $('#topTable')[0].scrollIntoView();
     }); 
+    
+    $('#floatReset').click(function(){
+        while(addOrder.length!=0){
+            $('td:first-child input','#'+addOrder[0]+'').click();
+            console.log(addOrder);
+        }
+    });
+    
+    $('#floatSave').click(function(){
+        console.log("Start saving user courses...");
+        chrome.storage.sync.set({'savedCourses': addOrder}, function(){
+            console.log('Saved!');
+            chrome.storage.sync.get('savedCourses', function(result){
+                console.log(result.savedCourses);
+            })
+        });
+    });
 }
 
 //hard-reset version
@@ -232,8 +253,6 @@ function updateCredit(){
     }   
 }
 
-var addOrder = [];
-
 function addCourse(tr){
 /*
    soc = courseData[1]
@@ -401,13 +420,32 @@ function updateFloat(){
     $('#floatBody td').css({'font-size':'10px','padding':'10px 5px','border-width': '1px','border-style': 'solid'});
 }
 
+var loadCourse= (function(){
+    var loaded = false;
+    return function(){
+        if(!loaded){
+            loaded = true;
+            chrome.storage.sync.get('savedCourses', function(result){
+                var loadedArray = result.savedCourses;
+                console.log("Loaded Array: "+ loadedArray);
+                for(var i in loadedArray){
+                    $('td:first-child input','#'+loadedArray[i]+'').click();
+                    console.log(addOrder);
+                }
+            });
+        }
+    };
+})();
+
 $(document).ready(function(){
     $('table:nth-child(5) tbody').attr('id','courseTable');
     //collapse border so can highlight whole tr
     $('#courseTable').parent().css('border-collapse','collapse');
     
+
     injectDOM();
     checkCB();
+    loadCourse();
     calculateGPA();
 })
 

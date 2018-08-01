@@ -36,7 +36,7 @@ function injectDOM(){
         $('td:first-child', this).prepend('<input type="checkbox">');
     });
     
-    //the following lines are for adding add-in table
+    //the following lines are for adding top table
     $('body').prepend('<table id="topTable" style="border-collapse:collapse;border-spacing:0"></table>');
     
     $('#topTable').html('<thead><tr><th id="creditCount" colspan="4">Credit selected: 0</th><td id="gradeCalc" colspan="7"></td></tr><tr style="background-color:#fcff2f;text-align:center"><td>SOC</td><td>Course</td><td>Description</td><td>Credit</td><td>Time</td><td>Area</td><td>Comp</td><td>Instructor</td><td>Room</td><td>Status</td><td>Grade</td></tr><tbody id="courseInfo"></tbody>');
@@ -48,8 +48,13 @@ function injectDOM(){
     $('#gradeCalc').html('<label for="oldGPA">Current GPA: </label><input id="oldGPA" type="number" name="oldGPA" step="0.01" min="0" max="4" style="width:3.5em"><label for="credTaken"> Credit taken: </label><input id="credTaken" type="number" name="credTaken" step="0.25" min="0" style="width:4.25em; margin-right:0.5em"><button disabled id="updateButton" style="float:right">Update</button><p style="font-size:12px"><span id="newGPA"> Expected GPA: </span><a href="https://my.depauw.edu/e/student/grades_rpt.asp?r=H" target="_blank" style="text-align: right;float: right;">Check grade</a></p>');
     
     $('body').prepend('<table id="floatTable" style="border-collapse:collapse;border-spacing:0;position:fixed;top:20px;right:0px"></table>');
-    $('#floatTable').html('<tbody id="floatBody"></tbody>').hide();
+    $('#floatTable').html('<tbody id="floatBody"></tbody><tr position="fixed" id="floatUtil"><th id="floatCredit" colspan="2" style="background-color:white">Credit selected: 0</th><td colspan="5"><nobr><button id="floatTop">Go Top</button><button id="floatSave">Save</button><button id="floatReset">Reset</button></nobr></td></tr>').hide();
+    $('#floatCredit, #floatUtil td').css({'font-size':'10px','border-style':'solid','border-width':'1px'}); 
+    $('#floatUtil button').css({'font-size':'10px','float':'left',width:'33.3%'});
     
+    $('#floatTop').click(function(){
+        $('#topTable')[0].scrollIntoView();
+    }); 
 }
 
 //hard-reset version
@@ -212,18 +217,18 @@ function updateCredit(){
         }
     })
     
-    $('#creditCount').html('Credit selected: ' + totalCredit +''); //update the total credit
+    $('#creditCount, #floatCredit').html('Credit selected: ' + totalCredit +''); //update the total credit
     if(totalCredit < 3.0 && totalCredit>0){
-        $('#creditCount').css("background-color", red); //not ok
+        $('#creditCount, #floatCredit').css("background-color", red); //not ok
     }
     else if(totalCredit > 4.5){
-        $('#creditCount').css("background-color", yellow); //have to pay extra
+        $('#creditCount, #floatCredit').css("background-color", yellow); //have to pay extra
     }
     else if(totalCredit === 0){
-        $('#creditCount').css("background-color", '#FFFFFF'); //reset
+        $('#creditCount, #floatCredit').css("background-color", '#FFFFFF'); //reset
     }
     else{
-        $('#creditCount').css("background-color", green); //ok
+        $('#creditCount, #floatCredit').css("background-color", green); //ok
     }   
 }
 
@@ -282,7 +287,7 @@ function addCourse(tr){
         
     $('#'+ id +' button').click(function(){
         $(tr)[0].scrollIntoView();
-    })
+    });
     $(tr).css('background-color', green);
     
     var minString;

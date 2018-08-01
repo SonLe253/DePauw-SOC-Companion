@@ -25,7 +25,7 @@ var green = '#c8f08c';
 var yellow = '#f0e68c';
 var red = '#f0b48c';
 
-var gradeList = '<select id="grade"><option></option><option value="4.0">A</option><option value="3.67">A-</option><option value="3.33">B+</option><option value="3.0">B</option><option value="2.67">B-</option><option value="2.33">C+</option><option value="2.0">C</option><option value="1.67">C-</option><option value="1.33">D+</option><option value="1.0">D</option><option value="0.67">D-</option><option value="0.0">F</option>';
+var gradeList = '<select class="grade"><option></option><option value="4.0">A</option><option value="3.67">A-</option><option value="3.33">B+</option><option value="3.0">B</option><option value="2.67">B-</option><option value="2.33">C+</option><option value="2.0">C</option><option value="1.67">C-</option><option value="1.33">D+</option><option value="1.0">D</option><option value="0.67">D-</option><option value="0.0">F</option>';
 
 function injectDOM(){
     //the following lines are for injecting checkboxes
@@ -68,10 +68,10 @@ function calculateGPA(){
     $('#updateButton').click(function(){
         var newGrade = oldGrade;
         var newCredit = oldCredit;
-        $('#topTable tr #grade').each(function(){
+        $('#topTable tr .grade').each(function(){
             if($(this).val() != ""){
                 var pickedGrade = parseFloat($(this).val());
-                var pickedCredit = parseFloat($(this).parents('tr').children('#cred').text());
+                var pickedCredit = parseFloat($(this).parents('tr').children('.cred').text());
                 newGrade += pickedCredit*pickedGrade;
                 newCredit += pickedCredit;
             }
@@ -275,8 +275,8 @@ function addCourse(tr){
     var id = addOrder.length-1;
     
     $('#courseInfo').append('<tr id="'+ id + '" class="course'+ id+ '" style="background-color:'+ green + '"><td><button>' + courseData[1] + 
-                                '</button></td><td>'+ courseData[2] + '</td><td>' + courseData[3] + '</td><td id="cred">' + courseData[4] + '</td><td id="time">' + courseData[5] + 
-                                '</td><td>' + courseData[6] + '</td><td>' + courseData[7] + '</td><td>' + instRoom[0] + '</td><td id="room">' + instRoom[1] + '</td><td id="status">'+ statusString +'</td><td>' + gradeList + '</td></tr>');
+                                '</button></td><td>'+ courseData[2] + '</td><td>' + courseData[3] + '</td><td class="cred">' + courseData[4] + '</td><td class="time">' + courseData[5] + 
+                                '</td><td>' + courseData[6] + '</td><td>' + courseData[7] + '</td><td>' + instRoom[0] + '</td><td class="room">' + instRoom[1] + '</td><td class="status">'+ statusString +'</td><td>' + gradeList + '</td></tr>');
         
     $('#'+ id +' button').click(function(){
         $(tr)[0].scrollIntoView();
@@ -285,16 +285,16 @@ function addCourse(tr){
     
     var minString;
     minString= courseData[1] + '_' + courseData[2];
-    $('#floatBody').append('<tr class="course'+ id+ '" style="font-size:10px; background-color:'+ green+ '"><td>'+ minString+'</td><td>'+ courseData[4]+'</td><td id="time">'+ courseData[5]+ '</td><td>'+ courseData[6]+ '</td><td>'+ courseData[7]+ '</td><td id="room">'+ instRoom[1] +'</td><td id="status">'+ statusString +'</td></tr>');
+    $('#floatBody').append('<tr class="course'+ id+ '" style="font-size:10px; background-color:'+ green+ '"><td>'+ minString+'</td><td>'+ courseData[4]+'</td><td class="time">'+ courseData[5]+ '</td><td>'+ courseData[6]+ '</td><td>'+ courseData[7]+ '</td><td class="room">'+ instRoom[1] +'</td><td class="status">'+ statusString +'</td></tr>');
     
     if(waitlist || filled){
-        $('.course'+id +' #status').css('background-color', yellow);
+        $('.course'+id +' .status').css('background-color', yellow);
         //$('.course'+id +' #status').attr('class', 'yellow');
     }
     
     if(courseData[5].match('ARR')){
-        $('.course'+id +' #time').css('background-color', yellow);
-        $('.course'+id +' #room').css('background-color', yellow);
+        $('.course'+id +' .time').css('background-color', yellow);
+        $('.course'+id +' .room').css('background-color', yellow);
     }
     
     var labCheck = /(L[A-Z])$/;

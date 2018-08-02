@@ -1,16 +1,20 @@
 chrome.runtime.sendMessage({action: "show"});
 
 /* TODO (ARRAY VERSION): 
-    - Allow user to save other input(grade)
-    - Allow user to delete course on table
+    - Link button popup
+    - Add notification
+    - Save user picked grade also
     - Allow user to export table
-    - If course offer P/F, tell user
+    - If course offer P/F, tell user in credit td (ex: 1(P/F))
     - Check CSS of the #gradeCalc
-    - Consider using json serialization to store needed data
     
     - Revise code logic, delete all the debug line when done
-
-    DONE TODO:    
+    Optional: consider using json serialization to store needed data
+    
+    DONE TODO:
+    - Allow user to travel to the course on float table
+    - Allow user to delete course on table
+    - Allow user to save other input(GPA)
     - Add lab to float table, and floatTable to removeCourse, sync color when conflict (in updateConflict) between top and float table
     - Work on float table, and add float table tr code in addCourse(tr), same thing with removeCourse(tr), try not to use a hard reset updateFloat() method
     - switch all unneeded id to class
@@ -53,7 +57,7 @@ function injectDOM(){
     $('#gradeCalc').html('<label for="oldGPA">Current GPA: </label><input id="oldGPA" type="number" name="oldGPA" step="0.01" min="0" max="4" style="width:3.5em"><label for="credTaken"> Credit taken: </label><input id="credTaken" type="number" name="credTaken" step="0.25" min="0" style="width:4.25em; margin-right:0.5em"><button disabled id="updateButton" style="float:right">Update</button><p style="font-size:12px"><span id="newGPA"> Expected GPA: </span><a href="https://my.depauw.edu/e/student/grades_rpt.asp?r=H" target="_blank" style="text-align: right;float: right;">Check grade</a></p>');
     
     $('body').prepend('<table id="floatTable" style="border-collapse:collapse;border-spacing:0;position:fixed;top:20px;right:0px"></table>');
-    $('#floatTable').html('<tbody id="floatBody"></tbody><tr position="fixed" id="floatUtil"><th id="floatCredit" colspan="2" style="background-color:white">Credit selected: 0</th><td colspan="5"><nobr><button id="floatTop">Go Top</button><button id="floatSave">Save</button><button id="floatReset">Reset</button></nobr></td></tr>').hide();
+    $('#floatTable').html('<tbody id="floatBody"></tbody><tr position="fixed" id="floatUtil"><th id="floatCredit" colspan="3" style="background-color:white">Credit selected: 0</th><td colspan="5"><nobr><button id="floatTop">Go Top</button><button id="floatSave">Save</button><button id="floatReset">Reset</button></nobr></td></tr>').hide();
     $('#floatCredit, #floatUtil td').css({'font-size':'10px','border-style':'solid','border-width':'1px'}); 
     $('#floatUtil button').css({'font-size':'10px','float':'left',width:'33.3%'});
     
@@ -66,16 +70,45 @@ function injectDOM(){
             $('td:first-child input','#'+addOrder[0]+'').click();
             console.log(addOrder);
         }
+        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': '0','savedCred': '0'}, function(){
+            console.log('Reset saved courses!');
+            chrome.storage.sync.get(['savedCourses','savedGPA','savedCred'], function(result){
+                console.log(result.savedCourses);
+                console.log(result.savedGPA);
+                console.log(result.savedCred);
+            });
+        });
     });
     
     $('#floatSave').click(function(){
-        console.log("Start saving user courses...");
-        chrome.storage.sync.set({'savedCourses': addOrder}, function(){
-            console.log('Saved!');
-            chrome.storage.sync.get('savedCourses', function(result){
-                console.log(result.savedCourses);
-            })
+        if($('#oldGPA').val() != "" && $('#credTaken').val() != ""){
+            var inputGPA = $('#oldGPA').val();
+            var inputCred = $('#credTaken').val();
+        }
+        
+        var gradeArray = [];
+        $('#topTable tr .grade').each(function(){
+            if($(this).val() != ""){
+                gradeArray.push($(this).val());
+            }
         });
+        console.log(gradeArray);
+        
+        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': inputGPA,'savedCred': inputCred}, function(){
+            console.log('Saved!');
+            /*chrome.storage.sync.get(['savedCourses','savedGPA','savedCred'], function(result){
+                console.log(result.savedCourses);
+                console.log(result.savedGPA);
+                console.log(result.savedCred);
+            });
+            var opt = {
+                type: "basic",
+                title: "User input saved!",
+                message: "User picked courses and grade input have been saved!",
+                iconUrl: "icon.png"
+                }
+            chrome.notifications.create('save', opt);*/
+        }); 
     });
 }
 
@@ -288,7 +321,6 @@ function addCourse(tr){
     var statusString = status[0];
     
     if(status[1].match(/\(+/)){
-        console.log("match!");
         statusString += "(WL)";
         var waitlist = true;
     }
@@ -301,18 +333,25 @@ function addCourse(tr){
     addOrder.push(courseData[1]);
     var id = addOrder.length-1;
     
-    $('#courseInfo').append('<tr id="'+ id + '" class="row'+ id+ '" style="background-color:'+ green + '"><td><button>' + courseData[1] + 
+    $('#courseInfo').append('<tr id="'+ id + '" class="row'+ id+ '" style="background-color:'+ green + '"><td><button class="shortcut">' + courseData[1] + 
                                 '</button></td><td>'+ courseData[2] + '</td><td>' + courseData[3] + '</td><td class="cred">' + courseData[4] + '</td><td class="time">' + courseData[5] + 
-                                '</td><td>' + courseData[6] + '</td><td>' + courseData[7] + '</td><td>' + instRoom[0] + '</td><td class="room">' + instRoom[1] + '</td><td class="status">'+ statusString +'</td><td>' + gradeList + '</td></tr>');
-        
-    $('#'+ id +' button').click(function(){
+                                '</td><td>' + courseData[6] + '</td><td>' + courseData[7] + '</td><td>' + instRoom[0] + '</td><td class="room">' + instRoom[1] + '</td><td class="status">'+ statusString +'</td><td>' + gradeList + '</td><td><button class="remove">Remove</button></td></tr>');
+    
+    $('#floatBody').append('<tr class="row'+ id+ '" style="font-size:10px; background-color:'+ green+ '"><td><input type="checkbox" checked></td><td><button class="shortcut" style="font-size:10px" class="shortcut">'+ courseData[1]+'</button> '+ courseData[2] +'</td><td>'+ courseData[4]+'</td><td class="time">'+ courseData[5]+ '</td><td>'+ courseData[6]+ '</td><td>'+ courseData[7]+ '</td><td class="room">'+ instRoom[1] +'</td><td class="status">'+ statusString +'</td></tr>');
+    
+    $('.row'+ id +' .shortcut').click(function(){
         $(tr)[0].scrollIntoView();
     });
+    
+    $('.row'+ id +' .remove').click(function(){
+        $(':input[type="checkbox"]',tr).click();
+    });
+    
     $(tr).css('background-color', green);
     
-    var minString;
-    minString= courseData[1] + '_' + courseData[2];
-    $('#floatBody').append('<tr class="row'+ id+ '" style="font-size:10px; background-color:'+ green+ '"><td>'+ minString+'</td><td>'+ courseData[4]+'</td><td class="time">'+ courseData[5]+ '</td><td>'+ courseData[6]+ '</td><td>'+ courseData[7]+ '</td><td class="room">'+ instRoom[1] +'</td><td class="status">'+ statusString +'</td></tr>');
+    $('#floatBody .row'+ id+ ' input[type="checkbox"]').click(function(){
+        $(':input[type="checkbox"]',tr).click();
+    });
     
     if(waitlist || filled){
         $('.row'+id +' .status').css('background-color', yellow);
@@ -336,17 +375,15 @@ function addCourse(tr){
         $('#courseInfo').append('<tr id="'+ id + '" class="lab row'+ id + '" style="background-color:'+ green + '"><td>' +
                                 lab.children(':nth-child(2)').text() +'</td><td></td><td>'+ lab.children(':nth-child(3)').text() +'</td><td></td><td class="time">' +
                                 lab.children(':nth-child(5)').text() + '</td><td></td><td></td><td></td><td class= "room">' + 
-                                lab.children(':nth-child(10)').text() + '</td><td></td><td></td></tr>');
+                                lab.children(':nth-child(10)').text() + '</td><td></td><td></td><td></td></tr>');
         lab.css('background-color', green);
         
-        $('#floatBody').append('<tr class="row'+ id + '" style="font-size:10px; background-color:'+ green+ '"><td>Lab_'+ courseData[2]+'</td><td></td><td class="time">'+ lab.children(':nth-child(5)').text()+ '</td><td></td><td></td><td class="room">'+ lab.children(':nth-child(10)').text()+'</td><td></td></tr>');
+        $('#floatBody').append('<tr class="row'+ id + '" style="font-size:10px; background-color:'+ green+ '"><td></td><td>Lab_'+ courseData[2]+'</td><td></td><td class="time">'+ lab.children(':nth-child(5)').text()+ '</td><td></td><td></td><td class="room">'+ lab.children(':nth-child(10)').text()+'</td><td></td></tr>');
         
         if(lab.children(':nth-child(5)').text().match('ARR')){
-            $('#'+ id+' .time').css('background-color', yellow);
             $('.row'+ id+ ' .time').css('background-color', yellow);
         }
         if(lab.children(':nth-child(10)').text().match('ARR')){
-            $('#'+ id+' .room').css('background-color', yellow);
             $('.row'+ id+ ' .room').css('background-color', yellow);
         }
     }
@@ -426,12 +463,17 @@ var loadCourse= (function(){
     return function(){
         if(!loaded){
             loaded = true;
-            chrome.storage.sync.get('savedCourses', function(result){
+            chrome.storage.sync.get(['savedCourses','savedGPA','savedCred'], function(result){
                 var loadedArray = result.savedCourses;
                 console.log("Loaded Array: "+ loadedArray);
                 for(var i in loadedArray){
                     $('td:first-child input','#'+loadedArray[i]+'').click();
                     console.log(addOrder);
+                }
+                if(result.savedGPA!='0' && result.savedCred!='0'){
+                    $('#oldGPA').val(result.savedGPA);
+                    $('#credTaken').val(result.savedCred);
+                    $('#gradeCalc').change();
                 }
             });
         }

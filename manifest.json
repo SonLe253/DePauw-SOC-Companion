@@ -1,17 +1,16 @@
 {
     "manifest_version": 2,
     
-    "name": "DPU Course Companion",
-    "description": "DePauw Course Companion",
-    "version": "0.1",
+    "name": "Tyler Track",
+    "description": "DePauw Tyler Track",
+    "version": "0.8",
 
     "author": "Son Le",
-    //"default_locale": "en",
     
     //"icons": {}, to be added
     
     "page_action": {
-        //"default_icon": {}, to be added
+        "default_icon": "icon.png",
         "default_title": "Course Companion",
         "default_popup": "popup.html"
      },
@@ -29,7 +28,6 @@
         
             "js": [
                 "content_scripts/lib/jquery-3.3.1.min.js",
-                "content_scripts/lib/jquery-ui.min.js",
                 "content_scripts/courseCompanion-cs.js"
             ]
     }],

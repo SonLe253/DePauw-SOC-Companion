@@ -1,8 +1,6 @@
-chrome.runtime.sendMessage({action: "show"});
-
 /* TODO (ARRAY VERSION): 
-    - Link button popup
-    - Add notification
+    - Link button popup (done, still have export)
+    - Add notification (Added to popup buttons, does not work with floatTable buttons)
     - Save user picked grade also
     - Allow user to export table
     - If course offer P/F, tell user in credit td (ex: 1(P/F))
@@ -36,7 +34,33 @@ var gradeList = '<select class="grade"><option></option><option value="4.0">A</o
 
 var addOrder = [];
 
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
+    if(request.action == "reset"){
+        while(addOrder.length!=0){
+            $('td:first-child input','#'+addOrder[0]+'').click();
+        }
+        
+        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': '0','savedCred': '0'}, function(){
+            console.log('Reset saved courses!');
+        });    
+    }
+    
+    if(request.action == "save"){
+        if($('#oldGPA').val() != "" && $('#credTaken').val() != ""){
+            var inputGPA = $('#oldGPA').val();
+            var inputCred = $('#credTaken').val();
+        }
+        
+        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': inputGPA,'savedCred': inputCred}, function(){
+            console.log('Saved!');
+        }); 
+    }
+});
+
+chrome.runtime.sendMessage({action: "show"});
+
 function injectDOM(){
+    
     //the following lines are for injecting checkboxes
     $('#courseTable tr:nth-child(2)').prepend("<td></td>"); 
     $('#courseTable tr[valign="top"]').each(function(index){
@@ -50,12 +74,13 @@ function injectDOM(){
     
     $('#topTable').html('<thead><tr><th id="creditCount" colspan="4">Credit selected: 0</th><td id="gradeCalc" colspan="7"></td></tr><tr style="background-color:#fcff2f;text-align:center"><td>SOC</td><td>Course</td><td>Description</td><td>Credit</td><td>Time</td><td>Area</td><td>Comp</td><td>Instructor</td><td>Room</td><td>Status</td><td>Grade</td></tr><tbody id="courseInfo"></tbody>');
     
-    $('#topTable td, #topTable th').css({'font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px'}); //deleted property: 'word-break':'normal','overflow':'hidden'
+    $('#topTable td, #topTable th').css({'font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px'});
     
     //the following line are for gradeCalc
     $('#gradeCalc').css('text-align', 'left');
     $('#gradeCalc').html('<label for="oldGPA">Current GPA: </label><input id="oldGPA" type="number" name="oldGPA" step="0.01" min="0" max="4" style="width:3.5em"><label for="credTaken"> Credit taken: </label><input id="credTaken" type="number" name="credTaken" step="0.25" min="0" style="width:4.25em; margin-right:0.5em"><button disabled id="updateButton" style="float:right">Update</button><p style="font-size:12px"><span id="newGPA"> Expected GPA: </span><a href="https://my.depauw.edu/e/student/grades_rpt.asp?r=H" target="_blank" style="text-align: right;float: right;">Check grade</a></p>');
     
+    //the following line are for floatTable
     $('body').prepend('<table id="floatTable" style="border-collapse:collapse;border-spacing:0;position:fixed;top:20px;right:0px"></table>');
     $('#floatTable').html('<tbody id="floatBody"></tbody><tr position="fixed" id="floatUtil"><th id="floatCredit" colspan="3" style="background-color:white">Credit selected: 0</th><td colspan="5"><nobr><button id="floatTop">Go Top</button><button id="floatSave">Save</button><button id="floatReset">Reset</button></nobr></td></tr>').hide();
     $('#floatCredit, #floatUtil td').css({'font-size':'10px','border-style':'solid','border-width':'1px'}); 
@@ -68,16 +93,10 @@ function injectDOM(){
     $('#floatReset').click(function(){
         while(addOrder.length!=0){
             $('td:first-child input','#'+addOrder[0]+'').click();
-            console.log(addOrder);
         }
-        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': '0','savedCred': '0'}, function(){
-            console.log('Reset saved courses!');
-            chrome.storage.sync.get(['savedCourses','savedGPA','savedCred'], function(result){
-                console.log(result.savedCourses);
-                console.log(result.savedGPA);
-                console.log(result.savedCred);
-            });
-        });
+        
+        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': '0','savedCred': '0'}, function(){});
+            alert('User input reset!');
     });
     
     $('#floatSave').click(function(){
@@ -86,28 +105,8 @@ function injectDOM(){
             var inputCred = $('#credTaken').val();
         }
         
-        var gradeArray = [];
-        $('#topTable tr .grade').each(function(){
-            if($(this).val() != ""){
-                gradeArray.push($(this).val());
-            }
-        });
-        console.log(gradeArray);
-        
         chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': inputGPA,'savedCred': inputCred}, function(){
-            console.log('Saved!');
-            /*chrome.storage.sync.get(['savedCourses','savedGPA','savedCred'], function(result){
-                console.log(result.savedCourses);
-                console.log(result.savedGPA);
-                console.log(result.savedCred);
-            });
-            var opt = {
-                type: "basic",
-                title: "User input saved!",
-                message: "User picked courses and grade input have been saved!",
-                iconUrl: "icon.png"
-                }
-            chrome.notifications.create('save', opt);*/
+            alert('User input saved!');
         }); 
     });
 }
@@ -485,12 +484,11 @@ $(document).ready(function(){
     //collapse border so can highlight whole tr
     $('#courseTable').parent().css('border-collapse','collapse');
     
-
     injectDOM();
     checkCB();
     loadCourse();
     calculateGPA();
-})
+});
 
 
 

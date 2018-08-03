@@ -10,7 +10,11 @@
     //"icons": {}, to be added
     
     "page_action": {
-        "default_icon": "icon.png",
+        "default_icon": {
+            "16": "image/icon16.png",
+            "24": "image/icon24.png",
+            "32": "image/icon32.png"
+        },
         "default_title": "Course Companion",
         "default_popup": "popup.html"
      },

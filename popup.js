@@ -28,4 +28,19 @@ $(document).ready(function(){
                 }
         chrome.notifications.create('save', opt, function(){});
     });
+    
+    $('#export').click(function(){
+        chrome.tabs.query({active:true, currentWindow: true},
+        function(tabs){
+            chrome.tabs.sendMessage(tabs[0].id, {action: "export"});
+        });
+        
+        var opt = {
+                type: "basic",
+                title: "Input exported!",
+                message: "User picked courses have been exported to local storage!",
+                iconUrl: "saveIcon.png"
+                }
+        chrome.notifications.create('export', opt, function(){});
+    });
 });

@@ -55,6 +55,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
             console.log('Saved!');
         }); 
     }
+    
+    /*if(request.action == "export"){
+        //WIP
+    }*/
 });
 
 chrome.runtime.sendMessage({action: "show"});

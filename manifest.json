@@ -32,6 +32,8 @@
         
             "js": [
                 "content_scripts/lib/jquery-3.3.1.min.js",
+                "content_scripts/lib/jspdf.min.js",
+                "content_scripts/lib/jspdf.plugin.autotable.js",
                 "content_scripts/courseCompanion-cs.js"
             ]
     }],

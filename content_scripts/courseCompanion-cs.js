@@ -1,15 +1,22 @@
-/* TODO (ARRAY VERSION): 
-    - Link button popup (done, still have export)
-    - Add notification (Added to popup buttons, does not work with floatTable buttons)
-    - Save user picked grade also
-    - Allow user to export table
-    - If course offer P/F, tell user in credit td (ex: 1(P/F))
-    - Check CSS of the #gradeCalc
-    
-    - Revise code logic, delete all the debug line when done
+/*  TODO (ARRAY VERSION): 
+    - Write documentation to popup when user install extension (also will be the helper)
+    - Revise code logic, delete all the debug line when done, check if there is a var definition in a loop(if yes then make it declared only once)
+    - After that, revise all other code, beautify code and UI, change manifest version, add icon and all necessary thing to publish.
     Optional: consider using json serialization to store needed data
+    - Save user picked grade also
+    - Add notification center (on exit, pop noti for red || yellow state)
+    
+    UNSOLVED: 
+    - If adj period page have nothing
+    - Can't call each sem notifications (Something to do with ajax asynchronous and sendMessage synchronous)
     
     DONE TODO:
+    - Add updateGrade button notification
+    - Link button popup (done, still have export)
+    - Allow user to export table (consider export floatTable instead)
+    - Add available semester notification
+    - Add shortened instructor name to float table
+    - If course offer P/F, tell user in credit td (ex: 1(P/F))
     - Allow user to travel to the course on float table
     - Allow user to delete course on table
     - Allow user to save other input(GPA)
@@ -17,12 +24,11 @@
     - Work on float table, and add float table tr code in addCourse(tr), same thing with removeCourse(tr), try not to use a hard reset updateFloat() method
     - switch all unneeded id to class
     - Revise updateConflict logic, and fix problem where 2 course conflict, remove 1 but the other still marked red
+    - Check CSS of #gradeCalc
     - Revise calculateGPA
     - Reset lab of picked course color after mark conflicted
     - If course is ARR, waitlisted or filled, change state to yellow (in addCourse() and also add a yellow string after soc when add in to addOrder, so can get it color)
     - Consider add id for each tr so can have easy access, like $('#1 #cred') to get credit of first picked class, so will easy to calculate GPA later on.
-
-    How to make code clear: Name Description Params Return + Search for JS Style Guide
 */
 
 //Color used
@@ -40,9 +46,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
             $('td:first-child input','#'+addOrder[0]+'').click();
         }
         
-        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': '0','savedCred': '0'}, function(){
-            console.log('Reset saved courses!');
-        });    
+        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': '0','savedCred': '0'});    
     }
     
     if(request.action == "save"){
@@ -51,19 +55,41 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
             var inputCred = $('#credTaken').val();
         }
         
-        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': inputGPA,'savedCred': inputCred}, function(){
-            console.log('Saved!');
-        }); 
+        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': inputGPA,'savedCred': inputCred}); 
     }
     
-    /*if(request.action == "export"){
-        //WIP
-    }*/
+    if(request.action == "export"){
+        var exportTable = $('#floatTable').clone();
+        exportTable.find('td:first-child').remove();
+        exportTable.find('#floatUtil td').remove();
+        exportTable.prepend('<tr><td>SOC + Course</td><td>Credit</td><td>Time</td><td>Area</td><td>Comp</td><td>Instructor - Room</td><td>Status</td></tr>');
+
+        var doc = new jsPDF('p', 'pt');
+        var res = doc.autoTableHtmlToJson(exportTable[0]);
+        doc.autoTable(res.columns, res.data);
+        doc.save("Tyler Track.pdf");
+    }
 });
 
 chrome.runtime.sendMessage({action: "show"});
 
 function injectDOM(){
+    //load adjustment availbility to DOM for notifications
+    var year = ($('#courseTable tr:nth-child(1) td').text().split(' '))[2];
+    var sem ='';
+
+    $('body').append('<div id="adjustAvail" hidden></div>');
+    $('#adjustAvail').load('https://my.depauw.edu/e/student/courseadjustments/first_adjust_menu.asp center i a', function(){
+        $('#adjustAvail a').each(function(){
+            if($(this).next().is('a')){
+                sem += $(this).text().slice(0,-31) + ', ';
+            }
+            else{
+                sem += $(this).text().slice(0,-31) + ' ';
+            }
+        });
+        chrome.runtime.sendMessage({action: "availSem", semester: sem, schoolYear: year});
+    });
     
     //the following lines are for injecting checkboxes
     $('#courseTable tr:nth-child(2)').prepend("<td></td>"); 
@@ -99,8 +125,9 @@ function injectDOM(){
             $('td:first-child input','#'+addOrder[0]+'').click();
         }
         
-        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': '0','savedCred': '0'}, function(){});
-            alert('User input reset!');
+        chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': '0','savedCred': '0'}, function(){
+            chrome.runtime.sendMessage({action: "resetDOM"});
+        });
     });
     
     $('#floatSave').click(function(){
@@ -110,7 +137,7 @@ function injectDOM(){
         }
         
         chrome.storage.sync.set({'savedCourses': addOrder,'savedGPA': inputGPA,'savedCred': inputCred}, function(){
-            alert('User input saved!');
+            chrome.runtime.sendMessage({action: "saveDOM"});
         }); 
     });
 }
@@ -142,6 +169,7 @@ function calculateGPA(){
         var newGPA = newGrade/newCredit;
         var oldGPA = oldGrade/oldCredit;
         $('#newGPA').text('Expected GPA: ' + newGPA.toFixed(2));
+        chrome.runtime.sendMessage({action: "updateGrade"});
         
         if(newGPA > oldGPA){
             $('#gradeCalc').css('background-color', green);
@@ -319,8 +347,30 @@ function addCourse(tr){
 
     var instRoom = courseData[11].split(/([A-Z][A-Z].*)/);
     
+    var shortInst = instRoom[0];
+    if(shortInst.includes(',')){
+        var insts = shortInst.split(',');
+        for(var i in insts){
+            if(!(insts[i].includes('Staff'))){
+                var name = insts[i].split(' ');
+                insts[i] = name[0][0] + '. ' + name[name.length-1];
+            }
+        }
+        shortInst = insts[0] + ', ' + insts[1];
+    }
+    else{
+        if(!(shortInst.includes('Staff'))){
+            name = shortInst.split(' ');
+            shortInst = name[0][0] + '. ' + name[name.length-1];
+        }
+    }
+    
+    if(!(courseData[9].includes('N'))){
+        courseData[4] += '(P/F)';
+        console.log(courseData[4]);
+    }
+    
     var status = courseData[10].split(" ");
-    console.log("status1: " + status[0]+ " status2: " + status[1]);
     var statusString = status[0];
     
     if(status[1].match(/\(+/)){
@@ -340,7 +390,7 @@ function addCourse(tr){
                                 '</button></td><td>'+ courseData[2] + '</td><td>' + courseData[3] + '</td><td class="cred">' + courseData[4] + '</td><td class="time">' + courseData[5] + 
                                 '</td><td>' + courseData[6] + '</td><td>' + courseData[7] + '</td><td>' + instRoom[0] + '</td><td class="room">' + instRoom[1] + '</td><td class="status">'+ statusString +'</td><td>' + gradeList + '</td><td><button class="remove">Remove</button></td></tr>');
     
-    $('#floatBody').append('<tr class="row'+ id+ '" style="font-size:10px; background-color:'+ green+ '"><td><input type="checkbox" checked></td><td><button class="shortcut" style="font-size:10px" class="shortcut">'+ courseData[1]+'</button> '+ courseData[2] +'</td><td>'+ courseData[4]+'</td><td class="time">'+ courseData[5]+ '</td><td>'+ courseData[6]+ '</td><td>'+ courseData[7]+ '</td><td class="room">'+ instRoom[1] +'</td><td class="status">'+ statusString +'</td></tr>');
+    $('#floatBody').append('<tr class="row'+ id+ '" style="font-size:10px; background-color:'+ green+ '"><td><input type="checkbox" checked></td><td><button class="shortcut" style="font-size:10px" class="shortcut">'+ courseData[1]+'</button> '+ courseData[2] +'</td><td>'+ courseData[4]+'</td><td class="time">'+ courseData[5]+ '</td><td>'+ courseData[6]+ '</td><td>'+ courseData[7]+ '</td><td class="room">'+ shortInst + ' - ' + instRoom[1] +'</td><td class="status">'+ statusString +'</td></tr>');
     
     $('.row'+ id +' .shortcut').click(function(){
         $(tr)[0].scrollIntoView();

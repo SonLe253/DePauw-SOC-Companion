@@ -130,7 +130,7 @@ function getDefaults() {
     var scaleFactor = Config.scaleFactor();
     return {
         // Styling
-        theme: 'striped',
+        theme: 'grid',
         styles: {},
         headerStyles: {},
         bodyStyles: {},

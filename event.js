@@ -1,3 +1,4 @@
+//Event page: Content script event listeners.
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action == "show") {
         chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
@@ -10,7 +11,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 type: "basic",
                 title: "Input saved!",
                 message: "User picked courses and grade input have been saved!",
-                iconUrl: "saveIcon.png"
+                iconUrl: "image/saveIcon.png"
             }
             chrome.notifications.create('save', opt);
         }
@@ -20,7 +21,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 type: "basic",
                 title: "Input reset!",
                 message: "User picked courses and grade input have been reset!",
-                iconUrl: "resetIcon.png"
+                iconUrl: "image/resetIcon.png"
             }
             chrome.notifications.create('reset', opt);
     }
@@ -30,9 +31,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 type: "basic",
                 title: "Expected GPA updated!",
                 message: "User expected GPA has been updated!",
-                iconUrl: "saveIcon.png"
+                iconUrl: "image/saveIcon.png"
             }
             chrome.notifications.create('update', opt);
+    }
+    
+    if (request.action == "loaded") {
+             var opt = {
+                type: "basic",
+                title: "Input loaded!",
+                message: "User picked courses and grade input from previous sessions have been loaded!",
+                iconUrl: "image/saveIcon.png"
+            }
+            chrome.notifications.create('loaded', opt);
     }
     
     if (request.action == "availSem"){
@@ -40,7 +51,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             type: "basic",
             title: "Adjustment period for "+ request.semester + request.schoolYear +" is available!",
             message: "Click this notification to go to adjustment menu page.",
-            iconUrl: "saveIcon.png"
+            iconUrl: "image/saveIcon.png"
         }
         chrome.notifications.create('sem', opt);
     }

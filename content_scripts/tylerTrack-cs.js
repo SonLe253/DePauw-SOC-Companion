@@ -1,16 +1,13 @@
-/*  TODO (ARRAY VERSION): 
+/*  TODO: 
     - Write documentation to popup when user install extension (also will be the helper)
-    - Revise code logic, delete all the debug line when done, check if there is a var definition in a loop(if yes then make it declared only once)
-    - After that, revise all other code, beautify code and UI, change manifest version, add icon and all necessary thing to publish.
-    Optional: consider using json serialization to store needed data
-    - Save user picked grade also
-    - Add notification center (on exit, pop noti for red || yellow state)
     
     UNSOLVED: 
     - If adj period page have nothing
     - Can't call each sem notifications (Something to do with ajax asynchronous and sendMessage synchronous)
     
     DONE TODO:
+    - Revise code logic, delete all the debug line when done
+    - Revise all other code, beautify code and UI, change manifest version, add icon and all necessary thing to publish.
     - Add updateGrade button notification
     - Link button popup (done, still have export)
     - Allow user to export table (consider export floatTable instead)
@@ -40,6 +37,7 @@ var gradeList = '<select class="grade"><option></option><option value="4.0">A</o
 
 var addOrder = [];
 
+//Popup buttons event listener
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
     if(request.action == "reset"){
         while(addOrder.length!=0){
@@ -75,8 +73,8 @@ chrome.runtime.sendMessage({action: "show"});
 
 function injectDOM(){
     //load adjustment availbility to DOM for notifications
-    var year = ($('#courseTable tr:nth-child(1) td').text().split(' '))[2];
-    var sem ='';
+    var year = "";
+    var sem = '';
 
     $('body').append('<div id="adjustAvail" hidden></div>');
     $('#adjustAvail').load('https://my.depauw.edu/e/student/courseadjustments/first_adjust_menu.asp center i a', function(){
@@ -86,6 +84,8 @@ function injectDOM(){
             }
             else{
                 sem += $(this).text().slice(0,-31) + ' ';
+                var splitString = $(this).text().split(' ');
+                year = splitString[splitString.length-4];
             }
         });
         chrome.runtime.sendMessage({action: "availSem", semester: sem, schoolYear: year});
@@ -142,7 +142,7 @@ function injectDOM(){
     });
 }
 
-//hard-reset version
+//hard-reset version of calculating GPA method
 function calculateGPA(){
     var oldGrade= 0;
     var oldCredit= 0;
@@ -183,6 +183,7 @@ function calculateGPA(){
     });
 }
 
+//time conflict algorithm
 function checkConflict(time1, time2){
     if(time1.match('ARR') || time2.match('ARR')){
         return false;
@@ -261,13 +262,11 @@ function updateConflict(){
         //reset color of the coursetable picked course also
         if($('#'+ i+ '').attr('class').includes('lab')){
             $('#'+ addOrder[i-1] +'').next().css('background-color', green);
-            console.log('reset lab');
         }
         else{$('#'+ addOrder[i] +'').css('background-color', green);}
         
         timeList[i] = $('td:nth-child(5)','#'+ (i) +'').text();
     }
-    //console.log(timeList);
     
     for(var j=0; j < order-1; j++){
         for(var k=j+1; k < order; k++){
@@ -285,16 +284,12 @@ function updateConflict(){
                 }
                 
                 $('#'+ addOrder[j]+ ', #' + addOrder[k]+ '').css('background-color', red);
-                
-                console.log(addOrder);
-                //update the state of that course, for now I don't think it is necessary
             }
-            //console.log(checkConflict(timeList[j],timeList[k])); for testing, commented when done
         }
     }
 } 
 
-//hard-reset version
+//hard-reset version of updating credit method
 function updateCredit(){
     var totalCredit = 0.0;
     $('#courseInfo tr').each(function(){
@@ -332,15 +327,15 @@ function addCourse(tr){
    room = instRoom[1]
 */
     var courseData = [];
-    
+    var data = "";
     $(tr).children('td').each(function(){
         //for course name, get it name and also link
         if($(this).find('nobr').length){
-            var data = $(this).find('nobr').html();
+            data = $(this).find('nobr').html();
             courseData.push(data);
         }
         else{
-            var data = $(this).text();
+            data = $(this).text();
             courseData.push(data);
         }
     });
@@ -367,7 +362,6 @@ function addCourse(tr){
     
     if(!(courseData[9].includes('N'))){
         courseData[4] += '(P/F)';
-        console.log(courseData[4]);
     }
     
     var status = courseData[10].split(" ");
@@ -423,7 +417,6 @@ function addCourse(tr){
     if(labCheck.test($('td:nth-child(2)', lab).text())){
         id++;
         addOrder.push(courseData[1]+' lab');;
-        //value.labTime = next.children(':nth-child(5)').text(); left here just in case if need lab time
             
         $('#courseInfo').append('<tr id="'+ id + '" class="lab row'+ id + '" style="background-color:'+ green + '"><td>' +
                                 lab.children(':nth-child(2)').text() +'</td><td></td><td>'+ lab.children(':nth-child(3)').text() +'</td><td></td><td class="time">' +
@@ -446,7 +439,6 @@ function addCourse(tr){
 function removeCourse(tr){
     var id = $(tr).attr('id');
     var index = addOrder.indexOf(id);
-    //console.log(addOrder.indexOf(id));
     
     //lab situation
     if($(tr).next().children().text() != ''){
@@ -478,6 +470,23 @@ function removeCourse(tr){
     });
 }
 
+//update float table position as well as css 
+function updateFloat(){
+    var topofDiv = $("#topTable").offset().top; //gets offset of header
+    var height = $("#topTable").outerHeight(); //gets height of header
+ 
+    $(document).scroll(function(){
+        if($(document).scrollTop() > (topofDiv + height)){
+            $("#floatTable").show();  
+        }
+        else{
+            $("#floatTable").hide();
+        }
+    });
+    $('#floatBody td').css({'font-size':'10px','padding':'10px 5px','border-width': '1px','border-style': 'solid'});
+}
+
+//checkbox event handler
 function checkCB(){
     $("input:checkbox").change(function(){
         var tr = $(this).closest('tr');
@@ -496,21 +505,7 @@ function checkCB(){
     });
 }
 
-function updateFloat(){
-    var topofDiv = $("#topTable").offset().top; //gets offset of header
-    var height = $("#topTable").outerHeight(); //gets height of header
- 
-    $(document).scroll(function(){
-        if($(document).scrollTop() > (topofDiv + height)){
-            $("#floatTable").show();  
-        }
-        else{
-            $("#floatTable").hide();
-        }
-    });
-    $('#floatBody td').css({'font-size':'10px','padding':'10px 5px','border-width': '1px','border-style': 'solid'});
-}
-
+//one time load function
 var loadCourse= (function(){
     var loaded = false;
     return function(){
@@ -518,10 +513,8 @@ var loadCourse= (function(){
             loaded = true;
             chrome.storage.sync.get(['savedCourses','savedGPA','savedCred'], function(result){
                 var loadedArray = result.savedCourses;
-                console.log("Loaded Array: "+ loadedArray);
                 for(var i in loadedArray){
                     $('td:first-child input','#'+loadedArray[i]+'').click();
-                    console.log(addOrder);
                 }
                 if(result.savedGPA!='0' && result.savedCred!='0'){
                     $('#oldGPA').val(result.savedGPA);
@@ -529,10 +522,12 @@ var loadCourse= (function(){
                     $('#gradeCalc').change();
                 }
             });
+            chrome.runtime.sendMessage({action:"loaded"});
         }
     };
 })();
 
+//main function
 $(document).ready(function(){
     $('table:nth-child(5) tbody').attr('id','courseTable');
     //collapse border so can highlight whole tr

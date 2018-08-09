@@ -1,3 +1,4 @@
+//Popup button event handler: Send message to content scripts and create notification.
 $(document).ready(function(){
     $('#save').click(function(){
         chrome.tabs.query({active:true, currentWindow: true},
@@ -9,9 +10,9 @@ $(document).ready(function(){
                 type: "basic",
                 title: "Input saved!",
                 message: "User picked courses and grade input have been saved!",
-                iconUrl: "saveIcon.png"
+                iconUrl: "image/saveIcon.png"
                 }
-        chrome.notifications.create('save', opt, function(){});
+        chrome.notifications.create('save', opt);
     });
     
      $('#reset').click(function(){
@@ -24,9 +25,9 @@ $(document).ready(function(){
                 type: "basic",
                 title: "Input reset!",
                 message: "User picked courses and grade input have been reset!",
-                iconUrl: "resetIcon.png"
+                iconUrl: "image/resetIcon.png"
                 }
-        chrome.notifications.create('save', opt, function(){});
+        chrome.notifications.create('reset', opt);
     });
     
     $('#export').click(function(){
@@ -39,8 +40,8 @@ $(document).ready(function(){
                 type: "basic",
                 title: "Input exported!",
                 message: "User picked courses have been exported to local storage!",
-                iconUrl: "saveIcon.png"
+                iconUrl: "image/saveIcon.png"
                 }
-        chrome.notifications.create('export', opt, function(){});
+        chrome.notifications.create('export', opt);
     });
 });

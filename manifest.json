@@ -1,13 +1,17 @@
 {
     "manifest_version": 2,
     
-    "name": "Tyler Track",
-    "description": "DePauw Tyler Track",
-    "version": "0.8",
+    "name": "DePauw Tyler Track",
+    "description": "Help DePauw students to manage, find conflicts and keep track of their courses, credits and grades for the chosen semester.",
+    "version": "0.9",
 
     "author": "Son Le",
     
-    //"icons": {}, to be added
+    "icons": { 
+                "16": "image/icon16.png",
+                "48": "image/icon48.png",
+                "128": "image/icon128.png"
+    },
     
     "page_action": {
         "default_icon": {
@@ -15,7 +19,7 @@
             "24": "image/icon24.png",
             "32": "image/icon32.png"
         },
-        "default_title": "Course Companion",
+        "default_title": "DePauw Tyler Track",
         "default_popup": "popup.html"
      },
     
@@ -34,7 +38,7 @@
                 "content_scripts/lib/jquery-3.3.1.min.js",
                 "content_scripts/lib/jspdf.min.js",
                 "content_scripts/lib/jspdf.plugin.autotable.js",
-                "content_scripts/courseCompanion-cs.js"
+                "content_scripts/tylerTrack-cs.js"
             ]
     }],
     

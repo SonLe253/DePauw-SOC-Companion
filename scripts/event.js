@@ -55,6 +55,16 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         }
         chrome.notifications.create('sem', opt);
     }
+    
+    if (request.action == "availLogin"){
+        var opt = {
+            type: "basic",
+            title: "Adjustment period is available!",
+            message: "Login to e-Services to see the available adjustment period.",
+            iconUrl: "image/saveIcon.png"
+        }
+        chrome.notifications.create('login', opt);
+    }
 });
 
 chrome.notifications.onClicked.addListener(function(thisId){

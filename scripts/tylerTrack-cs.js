@@ -73,22 +73,26 @@ chrome.runtime.sendMessage({action: "show"});
 
 function injectDOM(){
     //load adjustment availbility to DOM for notifications
-    var year = "";
     var sem = '';
+    var year;
 
     $('body').append('<div id="adjustAvail" hidden></div>');
     $('#adjustAvail').load('https://my.depauw.edu/e/student/courseadjustments/first_adjust_menu.asp center i a', function(){
-        $('#adjustAvail a').each(function(){
+        if($('#adjustAvail').html() == ''){
+            chrome.runtime.sendMessage({action: "availLogin"});
+        }
+        else{
+            $('#adjustAvail a').each(function(){
             if($(this).next().is('a')){
                 sem += $(this).text().slice(0,-31) + ', ';
             }
             else{
+                year = $(this).text().substring($(this).text().length -30, $(this).text().length -23);
                 sem += $(this).text().slice(0,-31) + ' ';
-                var splitString = $(this).text().split(' ');
-                year = splitString[splitString.length-4];
             }
-        });
-        chrome.runtime.sendMessage({action: "availSem", semester: sem, schoolYear: year});
+            });
+            chrome.runtime.sendMessage({action: "availSem", semester: sem, schoolYear: year});
+        }
     });
     
     //the following lines are for injecting checkboxes

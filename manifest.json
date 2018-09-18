@@ -24,7 +24,7 @@
      },
     
     "background": {
-        "scripts": ["event.js"],
+        "scripts": ["scripts/event.js"],
         "persistent" : false
     },
     
@@ -35,10 +35,10 @@
             ],
         
             "js": [
-                "content_scripts/lib/jquery-3.3.1.min.js",
-                "content_scripts/lib/jspdf.min.js",
-                "content_scripts/lib/jspdf.plugin.autotable.js",
-                "content_scripts/tylerTrack-cs.js"
+                "scripts/lib/jquery-3.3.1.min.js",
+                "scripts/lib/jspdf.min.js",
+                "scripts/lib/jspdf.plugin.autotable.js",
+                "scripts/tylerTrack-cs.js"
             ]
     }],
     

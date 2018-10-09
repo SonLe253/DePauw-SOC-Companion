@@ -1,9 +1,9 @@
 {
     "manifest_version": 2,
     
-    "name": "DePauw Tyler Track",
+    "name": "DePauw Course Companion",
     "description": "Help DePauw students to manage, find conflicts and keep track of their courses, credits and grades for the chosen semester.",
-    "version": "0.9",
+    "version": "0.9.1",
 
     "author": "Son Le",
     
@@ -19,7 +19,7 @@
             "24": "image/icon24.png",
             "32": "image/icon32.png"
         },
-        "default_title": "DePauw Tyler Track",
+        "default_title": "DePauw Course Companion",
         "default_popup": "popup.html"
      },
     

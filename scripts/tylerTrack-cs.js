@@ -31,7 +31,7 @@
 //Color used
 var green = '#c8f08c';
 var yellow = '#f0e68c';
-var red = '#f0b48c';
+var red = '#f08c96';
 
 var gradeList = '<select class="grade"><option></option><option value="4.0">A</option><option value="3.67">A-</option><option value="3.33">B+</option><option value="3.0">B</option><option value="2.67">B-</option><option value="2.33">C+</option><option value="2.0">C</option><option value="1.67">C-</option><option value="1.33">D+</option><option value="1.0">D</option><option value="0.67">D-</option><option value="0.0">F</option>';
 
@@ -106,13 +106,13 @@ function injectDOM(){
     //the following lines are for adding top table
     $('body').prepend('<table id="topTable" style="border-collapse:collapse;border-spacing:0"></table>');
     
-    $('#topTable').html('<thead><tr><th id="creditCount" colspan="4">Credit selected: 0</th><td id="gradeCalc" colspan="7"></td></tr><tr style="background-color:#fcff2f;text-align:center"><td>SOC</td><td>Course</td><td>Description</td><td>Credit</td><td>Time</td><td>Area</td><td>Comp</td><td>Instructor</td><td>Room</td><td>Status</td><td>Grade</td></tr><tbody id="courseInfo"></tbody>');
+    $('#topTable').html('<thead><tr><th id="creditCount" colspan="4">Credit selected: 0</th><td id="gradeCalc" colspan="7"></td></tr><tr style="background-color:#fcff2f;text-align:center"><td>SOC</td><td>Course</td><td>Description</td><td>Credit</td><td>Time</td><td>Area</td><td>Comp</td><td>Instructor</td><td>Room</td><td>Enr/Max</td><td>Grade</td></tr><tbody id="courseInfo"></tbody>');
     
     $('#topTable td, #topTable th').css({'font-size':'12px','padding':'10px 5px','border-style':'solid','border-width':'1px'});
     
     //the following line are for gradeCalc
     $('#gradeCalc').css('text-align', 'left');
-    $('#gradeCalc').html('<label for="oldGPA">Current GPA: </label><input id="oldGPA" type="number" name="oldGPA" step="0.01" min="0" max="4" style="width:3.5em"><label for="credTaken"> Credit taken: </label><input id="credTaken" type="number" name="credTaken" step="0.25" min="0" style="width:4.25em; margin-right:0.5em"><button disabled id="updateButton" style="float:right">Update</button><p style="font-size:12px"><span id="newGPA"> Expected GPA: </span><a href="https://my.depauw.edu/e/student/grades_rpt.asp?r=H" target="_blank" style="text-align: right;float: right;">Check grade</a></p>');
+    $('#gradeCalc').html('<label for="oldGPA">Earned GPA: </label><input id="oldGPA" type="number" name="oldGPA" step="0.01" min="0" max="4" style="width:3.5em"><label for="credTaken"> Credit taken: </label><input id="credTaken" type="number" name="credTaken" step="0.25" min="0" style="width:4.25em; margin-right:0.5em"><button disabled id="updateButton" style="float:right">Update</button><p style="font-size:12px"><span id="newGPA"> Expected GPA: </span><a href="https://my.depauw.edu/e/student/grades_rpt.asp?r=H" target="_blank" style="text-align: right;float: right;">Check grade</a></p>');
     
     //the following line are for floatTable
     $('body').prepend('<table id="floatTable" style="border-collapse:collapse;border-spacing:0;position:fixed;top:20px;right:0px"></table>');
@@ -422,7 +422,7 @@ function addCourse(tr){
         id++;
         addOrder.push(courseData[1]+' lab');;
             
-        $('#courseInfo').append('<tr id="'+ id + '" class="lab row'+ id + '" style="background-color:'+ green + '"><td>' +
+        $('#courseInfo').append('<tr id="'+ id + '" class="lab row'+ id + '" style="background-color:'+ green + '"><td style="text-align:center">' +
                                 lab.children(':nth-child(2)').text() +'</td><td></td><td>'+ lab.children(':nth-child(3)').text() +'</td><td></td><td class="time">' +
                                 lab.children(':nth-child(5)').text() + '</td><td></td><td></td><td></td><td class= "room">' + 
                                 lab.children(':nth-child(10)').text() + '</td><td></td><td></td><td></td></tr>');
